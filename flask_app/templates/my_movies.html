@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}My Movies — CineReview{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>My Movies</h1>
+    <p class="subtitle">
+        {{ watched_movies | length }} watched &mdash;
+        {{ unwatched_movies | length }} still to see
+    </p>
+</div>
+
+<section class="my-movies-section">
+    <h2 class="section-heading">&#10003; Watched</h2>
+
+    {% if watched_movies %}
+        <div class="movie-list">
+            {% for movie in watched_movies %}
+            <div class="list-card">
+                <div class="list-card-left">
+                    <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="list-title">{{ movie.title }}</a>
+                    <div class="movie-meta">
+                        <span class="tag">{{ movie.genre }}</span>
+                        <span class="year">{{ movie.year }}</span>
+                        <span class="director">Dir. {{ movie.director }}</span>
+                    </div>
+                </div>
+                <div class="list-card-right">
+                    <span class="rating-badge">{{ movie.rating }}/10</span>
+                    <span class="watched-badge">&#10003; Watched</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>You haven't marked any films as watched yet.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Browse movies</a>
+        </div>
+    {% endif %}
+</section>
+
+<section class="my-movies-section">
+    <h2 class="section-heading">&#9675; Still to Watch</h2>
+
+    {% if unwatched_movies %}
+        <div class="movie-list">
+            {% for movie in unwatched_movies %}
+            <div class="list-card">
+                <div class="list-card-left">
+                    <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="list-title">{{ movie.title }}</a>
+                    <div class="movie-meta">
+                        <span class="tag">{{ movie.genre }}</span>
+                        <span class="year">{{ movie.year }}</span>
+                        <span class="director">Dir. {{ movie.director }}</span>
+                    </div>
+                </div>
+                <div class="list-card-right">
+                    <span class="rating-badge">{{ movie.rating }}/10</span>
+                    <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="btn btn-secondary btn-sm">Mark Watched</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>You've watched everything in the catalogue!</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

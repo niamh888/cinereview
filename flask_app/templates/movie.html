@@ -25,7 +25,20 @@
 
     <p class="movie-description">{{ movie.description }}</p>
 
-    <a href="{{ url_for('add_review', movie_id=movie.id) }}" class="btn btn-primary">Write a Review</a>
+    <div class="detail-actions">
+        {% if current_user.is_authenticated %}
+            <button
+                class="btn {% if watched %}btn-watched{% else %}btn-secondary{% endif %}"
+                id="watched-btn"
+                data-movie-id="{{ movie.id }}"
+                onclick="toggleWatched(this)">
+                <span id="watched-text">{% if watched %}&#10003; Watched{% else %}Mark as Watched{% endif %}</span>
+            </button>
+        {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-secondary">Log in to track watched</a>
+        {% endif %}
+        <a href="{{ url_for('add_review', movie_id=movie.id) }}" class="btn btn-primary">Write a Review</a>
+    </div>
 </div>
 
 <section class="reviews-section">
@@ -59,4 +72,27 @@
         </div>
     {% endif %}
 </section>
+
+<script>
+function toggleWatched(btn) {
+    const movieId = btn.dataset.movieId;
+    btn.disabled = true;
+
+    fetch(`/toggle-watched/${movieId}`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            const text = document.getElementById('watched-text');
+            if (data.watched) {
+                text.textContent = '✓ Watched';
+                btn.classList.remove('btn-secondary');
+                btn.classList.add('btn-watched');
+            } else {
+                text.textContent = 'Mark as Watched';
+                btn.classList.remove('btn-watched');
+                btn.classList.add('btn-secondary');
+            }
+            btn.disabled = false;
+        });
+}
+</script>
 {% endblock %}
