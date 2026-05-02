@@ -213,6 +213,25 @@ a:hover { text-decoration: underline; }
 .suggestion-title { font-weight: 600; color: #0f172a; font-size: 0.9rem; }
 .suggestion-meta { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 
+/* ---- Filter Bar ---- */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.filter-bar .btn.active {
+    background: #166534;
+    color: #fff;
+    border-color: #166534;
+}
+
+.filter-status {
+    font-size: 0.88rem;
+    color: #64748b;
+}
+
 /* ---- Poster Grid ---- */
 .poster-grid {
     display: grid;
@@ -232,7 +251,18 @@ a:hover { text-decoration: underline; }
 }
 
 .poster-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.1); transform: translateY(-3px); }
-.poster-card.is-watched { border-color: #86efac; }
+.poster-card.is-watched {
+    border-color: #86efac;
+    border-width: 2px;
+}
+
+.poster-card.is-watched .movie-poster-img {
+    filter: brightness(0.45);
+}
+
+.poster-card.is-watched .no-poster {
+    filter: brightness(0.6);
+}
 
 .poster-link { position: relative; display: block; overflow: hidden; }
 
@@ -264,14 +294,18 @@ a:hover { text-decoration: underline; }
 
 .watched-overlay {
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: rgba(22, 101, 52, 0.9);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(22, 101, 52, 0.92);
     color: #fff;
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.5rem 1.1rem;
+    border-radius: 8px;
+    white-space: nowrap;
+    pointer-events: none;
+    letter-spacing: 0.3px;
 }
 
 .poster-card-body { padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }

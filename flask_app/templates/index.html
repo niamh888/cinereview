@@ -33,7 +33,16 @@
     <div class="alert alert-error">{{ error }}</div>
 {% endif %}
 
-<div class="poster-grid">
+{% if current_user.is_authenticated %}
+<div class="filter-bar">
+    <button class="btn btn-secondary" id="filter-btn" onclick="toggleFilter()">
+        &#128065; Unwatched Only
+    </button>
+    <span class="filter-status" id="filter-status"></span>
+</div>
+{% endif %}
+
+<div class="poster-grid" id="poster-grid">
     {% for movie in movies %}
     <div class="poster-card {% if movie.id in watched_ids %}is-watched{% endif %}">
         <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="poster-link">
@@ -72,6 +81,28 @@
 </div>
 
 <script>
+function toggleFilter() {
+    const btn    = document.getElementById('filter-btn');
+    const status = document.getElementById('filter-status');
+    const cards  = document.querySelectorAll('.poster-card');
+    const active = btn.classList.toggle('active');
+
+    let hidden = 0;
+    cards.forEach(card => {
+        if (active && card.classList.contains('is-watched')) {
+            card.style.display = 'none';
+            hidden++;
+        } else {
+            card.style.display = '';
+        }
+    });
+
+    btn.innerHTML = active
+        ? '&#10003; Showing Unwatched Only'
+        : '&#128065; Unwatched Only';
+    status.textContent = active ? `${cards.length - hidden} films shown` : '';
+}
+
 function loadSuggestions() {
     const btn = document.getElementById('suggest-btn');
     btn.textContent = 'Loading...';
