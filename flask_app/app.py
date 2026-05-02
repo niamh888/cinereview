@@ -7,6 +7,7 @@ from itsdangerous import URLSafeTimedSerializer
 from datetime import datetime
 import re
 import random
+import tmdb
 
 app = Flask(__name__)
 app.secret_key = 'ucd-flask-assignment-secret'
@@ -14,15 +15,14 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cinereview.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # ---- Email Configuration ----
-# To enable password reset emails:
-#   1. Go to myaccount.google.com/security and enable 2-Step Verification
-#   2. Go to myaccount.google.com/apppasswords and create an App Password
-#   3. Replace the two values below with your Gmail address and the 16-char app password
+# 1. Enable 2-Step Verification: myaccount.google.com/security
+# 2. Create an App Password: myaccount.google.com/apppasswords
+# 3. Replace the two values below
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your-email@gmail.com'    # <-- change this
-app.config['MAIL_PASSWORD'] = 'your-app-password-here'  # <-- change this
+app.config['MAIL_USERNAME'] = 'your-email@gmail.com'
+app.config['MAIL_PASSWORD'] = 'your-app-password-here'
 
 db = SQLAlchemy(app)
 mail = Mail(app)
@@ -30,59 +30,6 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Please log in to use this feature.'
 login_manager.login_message_category = 'error'
-
-MOVIES = [
-    {
-        'id': 1,
-        'title': 'Inception',
-        'year': 2010,
-        'genre': 'Sci-Fi',
-        'director': 'Christopher Nolan',
-        'description': 'A skilled thief is offered a chance to have his criminal record erased if he can'
-                       ' successfully perform inception — planting an idea into someone\'s mind.',
-        'rating': 8.8,
-    },
-    {
-        'id': 2,
-        'title': 'The Shawshank Redemption',
-        'year': 1994,
-        'genre': 'Drama',
-        'director': 'Frank Darabont',
-        'description': 'Two imprisoned men bond over years, finding solace and eventual redemption'
-                       ' through acts of common decency.',
-        'rating': 9.3,
-    },
-    {
-        'id': 3,
-        'title': 'The Dark Knight',
-        'year': 2008,
-        'genre': 'Action',
-        'director': 'Christopher Nolan',
-        'description': 'Batman faces the Joker, a criminal mastermind who seeks to plunge Gotham City'
-                       ' into anarchy.',
-        'rating': 9.0,
-    },
-    {
-        'id': 4,
-        'title': 'Pulp Fiction',
-        'year': 1994,
-        'genre': 'Crime',
-        'director': 'Quentin Tarantino',
-        'description': 'The lives of two mob hitmen, a boxer, a gangster and his wife intertwine in'
-                       ' four tales of violence and redemption.',
-        'rating': 8.9,
-    },
-    {
-        'id': 5,
-        'title': 'Interstellar',
-        'year': 2014,
-        'genre': 'Sci-Fi',
-        'director': 'Christopher Nolan',
-        'description': 'A team of explorers travel through a wormhole in space in an attempt to ensure'
-                       ' humanity\'s survival.',
-        'rating': 8.6,
-    },
-]
 
 
 # ---- Models ----
@@ -117,12 +64,51 @@ class Review(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class MovieCache(db.Model):
+    tmdb_id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    year = db.Column(db.String(4))
+    poster_path = db.Column(db.String(200))
+    genres = db.Column(db.String(200))
+    vote_average = db.Column(db.Float)
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
 
 
 # ---- Helpers ----
+
+@app.context_processor
+def inject_tmdb():
+    return {
+        'poster_url': tmdb.poster_url,
+        'profile_url': tmdb.profile_url,
+        'genre_names': tmdb.genre_names,
+    }
+
+
+def cache_movie(tmdb_id):
+    cached = db.session.get(MovieCache, tmdb_id)
+    if cached:
+        return cached
+    try:
+        data = tmdb.movie_detail(tmdb_id)
+        cached = MovieCache(
+            tmdb_id=tmdb_id,
+            title=data['title'],
+            year=data.get('release_date', '')[:4],
+            poster_path=data.get('poster_path'),
+            genres=', '.join(g['name'] for g in data.get('genres', [])[:3]),
+            vote_average=data.get('vote_average'),
+        )
+        db.session.add(cached)
+        db.session.commit()
+    except Exception:
+        return None
+    return cached
+
 
 def check_password_strength(password):
     issues = []
@@ -169,8 +155,7 @@ def send_reset_email(user, token):
             recipients=[user.email],
             body=(
                 f"Hello {user.username},\n\n"
-                f"You requested a password reset for your CineReview account.\n\n"
-                f"Click the link below to set a new password (valid for 1 hour):\n"
+                f"Click the link below to reset your password (valid for 1 hour):\n"
                 f"{reset_url}\n\n"
                 f"If you did not request this, you can safely ignore this email.\n"
             ),
@@ -178,72 +163,157 @@ def send_reset_email(user, token):
         mail.send(msg)
         return True
     except Exception:
-        # If email isn't configured yet, print the link to the terminal for testing
         print(f'\n[DEV] Password reset link for {user.email}:\n  {reset_url}\n')
         return False
 
 
 # ---- Routes ----
 
+CATEGORIES = {
+    'now_playing': 'Now Playing',
+    'popular':     'Popular',
+    'top_rated':   'Top Rated',
+    'upcoming':    'Upcoming',
+}
+
+
 @app.route('/')
 def index():
-    genres = sorted(set(m['genre'] for m in MOVIES))
+    category = request.args.get('category', 'now_playing')
+    if category not in CATEGORIES:
+        category = 'now_playing'
+
+    movies = []
+    error = None
+    try:
+        fn = {
+            'now_playing': tmdb.now_playing,
+            'popular':     tmdb.popular,
+            'top_rated':   tmdb.top_rated,
+            'upcoming':    tmdb.upcoming,
+        }[category]
+        movies = fn()
+    except Exception:
+        error = 'Could not reach TMDB. Check your API key or internet connection.'
+
     watched_ids = set()
     if current_user.is_authenticated:
-        watched_ids = {w.movie_id for w in WatchedMovie.query.filter_by(user_id=current_user.id).all()}
-    return render_template('index.html', movies=MOVIES, genres=genres, watched_ids=watched_ids)
+        watched_ids = {
+            w.movie_id for w in WatchedMovie.query.filter_by(user_id=current_user.id).all()
+        }
+
+    return render_template('index.html', movies=movies, category=category,
+                           categories=CATEGORIES, watched_ids=watched_ids, error=error)
+
+
+@app.route('/search')
+def search():
+    query = request.args.get('q', '').strip()
+    movies = []
+    error = None
+
+    if query:
+        try:
+            movies = tmdb.search_movies(query)
+        except Exception:
+            error = 'Search failed. Please try again.'
+
+    watched_ids = set()
+    if current_user.is_authenticated:
+        watched_ids = {
+            w.movie_id for w in WatchedMovie.query.filter_by(user_id=current_user.id).all()
+        }
+
+    return render_template('search.html', movies=movies, query=query,
+                           watched_ids=watched_ids, error=error)
 
 
 @app.route('/movie/<int:movie_id>')
 def movie_detail(movie_id):
-    film = next((m for m in MOVIES if m['id'] == movie_id), None)
-    if film is None:
+    try:
+        film = tmdb.movie_detail(movie_id)
+        cast, director = tmdb.movie_credits(movie_id)
+    except Exception:
         return render_template('404.html'), 404
-    movie_reviews = Review.query.filter_by(movie_id=movie_id).order_by(Review.created_at.desc()).all()
+
+    movie_reviews = Review.query.filter_by(
+        movie_id=movie_id
+    ).order_by(Review.created_at.desc()).all()
+
     watched = False
     if current_user.is_authenticated:
         watched = WatchedMovie.query.filter_by(
             user_id=current_user.id, movie_id=movie_id
         ).first() is not None
-    return render_template('movie.html', movie=film, reviews=movie_reviews, watched=watched)
+
+    return render_template('movie.html', movie=film, cast=cast, director=director,
+                           reviews=movie_reviews, watched=watched)
 
 
 @app.route('/toggle-watched/<int:movie_id>', methods=['POST'])
 @login_required
 def toggle_watched(movie_id):
-    if not any(m['id'] == movie_id for m in MOVIES):
-        return jsonify({'error': 'Movie not found'}), 404
-    existing = WatchedMovie.query.filter_by(user_id=current_user.id, movie_id=movie_id).first()
+    existing = WatchedMovie.query.filter_by(
+        user_id=current_user.id, movie_id=movie_id
+    ).first()
     if existing:
         db.session.delete(existing)
         db.session.commit()
         return jsonify({'watched': False})
     db.session.add(WatchedMovie(user_id=current_user.id, movie_id=movie_id))
     db.session.commit()
+    cache_movie(movie_id)
     return jsonify({'watched': True})
 
 
 @app.route('/my-movies')
 @login_required
 def my_movies():
-    watched_ids = {w.movie_id for w in WatchedMovie.query.filter_by(user_id=current_user.id).all()}
-    watched_movies = [m for m in MOVIES if m['id'] in watched_ids]
-    unwatched_movies = [m for m in MOVIES if m['id'] not in watched_ids]
-    return render_template('my_movies.html', watched_movies=watched_movies, unwatched_movies=unwatched_movies)
+    watched_entries = WatchedMovie.query.filter_by(
+        user_id=current_user.id
+    ).order_by(WatchedMovie.watched_at.desc()).all()
+
+    watched_movies = []
+    for entry in watched_entries:
+        cached = db.session.get(MovieCache, entry.movie_id)
+        if not cached:
+            cached = cache_movie(entry.movie_id)
+        if cached:
+            watched_movies.append(cached)
+
+    return render_template('my_movies.html', watched_movies=watched_movies)
 
 
 @app.route('/add-review', methods=['GET', 'POST'])
 def add_review():
     errors = {}
-    form_data = {}
+    movie_id_param = request.args.get('movie_id', '').strip()
+
+    movie_title = ''
+    if movie_id_param:
+        try:
+            cached = db.session.get(MovieCache, int(movie_id_param))
+            if cached:
+                movie_title = cached.title
+            else:
+                data = tmdb.movie_detail(int(movie_id_param))
+                movie_title = data.get('title', '')
+        except Exception:
+            pass
+
+    form_data = {'movie_id': movie_id_param, 'movie_title': movie_title}
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         movie_id_raw = request.form.get('movie_id', '').strip()
+        movie_title = request.form.get('movie_title', '')
         rating_raw = request.form.get('rating', '').strip()
         comment = request.form.get('comment', '').strip()
 
-        form_data = {'name': name, 'movie_id': movie_id_raw, 'rating': rating_raw, 'comment': comment}
+        form_data = {
+            'name': name, 'movie_id': movie_id_raw,
+            'movie_title': movie_title, 'rating': rating_raw, 'comment': comment,
+        }
 
         if not name:
             errors['name'] = 'Your name is required.'
@@ -251,14 +321,12 @@ def add_review():
             errors['name'] = 'Name must be at least 2 characters.'
 
         if not movie_id_raw:
-            errors['movie_id'] = 'Please select a movie.'
+            errors['movie_id'] = 'No movie selected — please find a film first.'
         else:
             try:
-                movie_id = int(movie_id_raw)
-                if not any(m['id'] == movie_id for m in MOVIES):
-                    errors['movie_id'] = 'Invalid movie selected.'
+                int(movie_id_raw)
             except ValueError:
-                errors['movie_id'] = 'Invalid movie selected.'
+                errors['movie_id'] = 'Invalid movie.'
 
         if not rating_raw:
             errors['rating'] = 'A rating is required.'
@@ -286,34 +354,45 @@ def add_review():
             flash('Your review has been submitted — thank you!', 'success')
             return redirect(url_for('movie_detail', movie_id=int(movie_id_raw)))
 
-    preselect = request.args.get('movie_id', '')
-    if not form_data:
-        form_data['movie_id'] = preselect
     if not form_data.get('name') and current_user.is_authenticated:
         form_data['name'] = current_user.username
 
-    return render_template('add_review.html', movies=MOVIES, errors=errors, form_data=form_data)
+    return render_template('add_review.html', errors=errors, form_data=form_data)
 
 
 @app.route('/suggestions')
 def suggestions():
-    good_reviews = Review.query.filter(Review.rating >= 4).all()
-    if good_reviews:
-        genre_counts = {}
-        for r in good_reviews:
-            movie = next((m for m in MOVIES if m['id'] == r.movie_id), None)
-            if movie:
-                genre_counts[movie['genre']] = genre_counts.get(movie['genre'], 0) + 1
-        top_genre = max(genre_counts, key=genre_counts.get)
-        picks = sorted(
-            [m for m in MOVIES if m['genre'] == top_genre],
-            key=lambda m: m['rating'], reverse=True
-        )[:3]
-        reason = f'Based on highly-rated {top_genre} reviews'
-    else:
-        picks = sorted(MOVIES, key=lambda m: m['rating'], reverse=True)[:3]
-        reason = 'Top rated films in our catalogue'
-    return jsonify({'suggestions': picks, 'reason': reason})
+    try:
+        if current_user.is_authenticated:
+            last = WatchedMovie.query.filter_by(
+                user_id=current_user.id
+            ).order_by(WatchedMovie.watched_at.desc()).first()
+
+            if last:
+                picks = tmdb.similar(last.movie_id)
+                reason = 'Because of films you have watched'
+            else:
+                picks = tmdb.trending()
+                reason = 'Trending this week'
+        else:
+            picks = tmdb.trending()
+            reason = 'Trending this week'
+
+        results = [
+            {
+                'id': m['id'],
+                'title': m['title'],
+                'year': m.get('release_date', '')[:4],
+                'genre': tmdb.genre_names(m.get('genre_ids', []))[0]
+                         if tmdb.genre_names(m.get('genre_ids', [])) else '',
+                'rating': round(m.get('vote_average', 0), 1),
+                'poster': tmdb.poster_url(m.get('poster_path'), 'w200'),
+            }
+            for m in picks[:4]
+        ]
+        return jsonify({'suggestions': results, 'reason': reason})
+    except Exception:
+        return jsonify({'suggestions': [], 'reason': 'Could not load suggestions'})
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -329,7 +408,6 @@ def register():
         return render_template('register.html', errors=errors, form_data=form_data,
                                captcha_question=captcha_question)
 
-    # Honeypot — bots fill hidden fields, humans don't
     if request.form.get('website', ''):
         return redirect(url_for('index'))
 
@@ -417,8 +495,7 @@ def login():
                 flash(f'Welcome back, {user.username}!', 'success')
                 next_page = request.args.get('next')
                 return redirect(next_page or url_for('index'))
-            else:
-                errors['general'] = 'Incorrect username or password.'
+            errors['general'] = 'Incorrect username or password.'
 
     return render_template('login.html', errors=errors, form_data=form_data)
 
@@ -452,7 +529,6 @@ def forgot_password():
             if user:
                 token = generate_reset_token(email)
                 send_reset_email(user, token)
-            # Always show success — don't reveal whether the email exists
             submitted = True
 
     return render_template('forgot_password.html', errors=errors, submitted=submitted)
@@ -501,9 +577,10 @@ def reset_password(token):
 @app.route('/about')
 def about():
     total_reviews = Review.query.count()
-    top_movie = max(MOVIES, key=lambda m: m['rating'])
+    total_users = User.query.count()
+    total_watched = WatchedMovie.query.count()
     return render_template('about.html', total_reviews=total_reviews,
-                           top_movie=top_movie, movie_count=len(MOVIES))
+                           total_users=total_users, total_watched=total_watched)
 
 
 with app.app_context():

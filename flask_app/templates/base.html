@@ -11,6 +11,13 @@
     <nav class="navbar">
         <div class="nav-container">
             <a class="nav-brand" href="{{ url_for('index') }}">CineReview</a>
+
+            <form class="nav-search" method="GET" action="{{ url_for('search') }}">
+                <input type="text" name="q" placeholder="Search any movie..." autocomplete="off"
+                       value="{{ request.args.get('q', '') }}">
+                <button type="submit">&#128269;</button>
+            </form>
+
             <ul class="nav-links">
                 <li><a href="{{ url_for('index') }}">Movies</a></li>
                 <li><a href="{{ url_for('add_review') }}">Write a Review</a></li>
@@ -46,7 +53,7 @@
     </main>
 
     <footer class="footer">
-        <p>&copy; 2026 CineReview &mdash; Built with Flask &amp; Python</p>
+        <p>&copy; 2026 CineReview &mdash; Powered by <a href="https://www.themoviedb.org" target="_blank">TMDB</a></p>
     </footer>
 
 </body>
