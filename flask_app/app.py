@@ -1,15 +1,31 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
+from itsdangerous import URLSafeTimedSerializer
 from datetime import datetime
+import re
+import random
 
 app = Flask(__name__)
 app.secret_key = 'ucd-flask-assignment-secret'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cinereview.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# ---- Email Configuration ----
+# To enable password reset emails:
+#   1. Go to myaccount.google.com/security and enable 2-Step Verification
+#   2. Go to myaccount.google.com/apppasswords and create an App Password
+#   3. Replace the two values below with your Gmail address and the 16-char app password
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'your-email@gmail.com'    # <-- change this
+app.config['MAIL_PASSWORD'] = 'your-app-password-here'  # <-- change this
+
 db = SQLAlchemy(app)
+mail = Mail(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Please log in to use this feature.'
@@ -22,7 +38,8 @@ MOVIES = [
         'year': 2010,
         'genre': 'Sci-Fi',
         'director': 'Christopher Nolan',
-        'description': 'A skilled thief is offered a chance to have his criminal record erased if he can successfully perform inception — planting an idea into someone\'s mind.',
+        'description': 'A skilled thief is offered a chance to have his criminal record erased if he can'
+                       ' successfully perform inception — planting an idea into someone\'s mind.',
         'rating': 8.8,
     },
     {
@@ -31,7 +48,8 @@ MOVIES = [
         'year': 1994,
         'genre': 'Drama',
         'director': 'Frank Darabont',
-        'description': 'Two imprisoned men bond over years, finding solace and eventual redemption through acts of common decency.',
+        'description': 'Two imprisoned men bond over years, finding solace and eventual redemption'
+                       ' through acts of common decency.',
         'rating': 9.3,
     },
     {
@@ -40,7 +58,8 @@ MOVIES = [
         'year': 2008,
         'genre': 'Action',
         'director': 'Christopher Nolan',
-        'description': 'Batman faces the Joker, a criminal mastermind who seeks to plunge Gotham City into anarchy.',
+        'description': 'Batman faces the Joker, a criminal mastermind who seeks to plunge Gotham City'
+                       ' into anarchy.',
         'rating': 9.0,
     },
     {
@@ -49,7 +68,8 @@ MOVIES = [
         'year': 1994,
         'genre': 'Crime',
         'director': 'Quentin Tarantino',
-        'description': 'The lives of two mob hitmen, a boxer, a gangster and his wife intertwine in four tales of violence and redemption.',
+        'description': 'The lives of two mob hitmen, a boxer, a gangster and his wife intertwine in'
+                       ' four tales of violence and redemption.',
         'rating': 8.9,
     },
     {
@@ -58,7 +78,8 @@ MOVIES = [
         'year': 2014,
         'genre': 'Sci-Fi',
         'director': 'Christopher Nolan',
-        'description': 'A team of explorers travel through a wormhole in space in an attempt to ensure humanity\'s survival.',
+        'description': 'A team of explorers travel through a wormhole in space in an attempt to ensure'
+                       ' humanity\'s survival.',
         'rating': 8.6,
     },
 ]
@@ -101,6 +122,67 @@ def load_user(user_id):
     return db.session.get(User, int(user_id))
 
 
+# ---- Helpers ----
+
+def check_password_strength(password):
+    issues = []
+    if len(password) < 8:
+        issues.append('at least 8 characters')
+    if not re.search(r'[A-Z]', password):
+        issues.append('an uppercase letter')
+    if not re.search(r'[a-z]', password):
+        issues.append('a lowercase letter')
+    if not re.search(r'\d', password):
+        issues.append('a number')
+    if not re.search(r'[!@#$%^&*()\-_=+\[\]{};:\'",.<>?]', password):
+        issues.append('a special character (!@#$ etc.)')
+    return issues
+
+
+def make_captcha():
+    a = random.randint(2, 15)
+    b = random.randint(2, 15)
+    session['captcha_answer'] = a + b
+    return f"{a} + {b}"
+
+
+def generate_reset_token(email):
+    s = URLSafeTimedSerializer(app.secret_key)
+    return s.dumps(email, salt='password-reset-salt')
+
+
+def verify_reset_token(token, max_age=3600):
+    s = URLSafeTimedSerializer(app.secret_key)
+    try:
+        email = s.loads(token, salt='password-reset-salt', max_age=max_age)
+    except Exception:
+        return None
+    return email
+
+
+def send_reset_email(user, token):
+    reset_url = url_for('reset_password', token=token, _external=True)
+    try:
+        msg = Message(
+            subject='CineReview — Password Reset Request',
+            sender=app.config['MAIL_USERNAME'],
+            recipients=[user.email],
+            body=(
+                f"Hello {user.username},\n\n"
+                f"You requested a password reset for your CineReview account.\n\n"
+                f"Click the link below to set a new password (valid for 1 hour):\n"
+                f"{reset_url}\n\n"
+                f"If you did not request this, you can safely ignore this email.\n"
+            ),
+        )
+        mail.send(msg)
+        return True
+    except Exception:
+        # If email isn't configured yet, print the link to the terminal for testing
+        print(f'\n[DEV] Password reset link for {user.email}:\n  {reset_url}\n')
+        return False
+
+
 # ---- Routes ----
 
 @app.route('/')
@@ -120,7 +202,9 @@ def movie_detail(movie_id):
     movie_reviews = Review.query.filter_by(movie_id=movie_id).order_by(Review.created_at.desc()).all()
     watched = False
     if current_user.is_authenticated:
-        watched = WatchedMovie.query.filter_by(user_id=current_user.id, movie_id=movie_id).first() is not None
+        watched = WatchedMovie.query.filter_by(
+            user_id=current_user.id, movie_id=movie_id
+        ).first() is not None
     return render_template('movie.html', movie=film, reviews=movie_reviews, watched=watched)
 
 
@@ -221,7 +305,10 @@ def suggestions():
             if movie:
                 genre_counts[movie['genre']] = genre_counts.get(movie['genre'], 0) + 1
         top_genre = max(genre_counts, key=genre_counts.get)
-        picks = sorted([m for m in MOVIES if m['genre'] == top_genre], key=lambda m: m['rating'], reverse=True)[:3]
+        picks = sorted(
+            [m for m in MOVIES if m['genre'] == top_genre],
+            key=lambda m: m['rating'], reverse=True
+        )[:3]
         reason = f'Based on highly-rated {top_genre} reviews'
     else:
         picks = sorted(MOVIES, key=lambda m: m['rating'], reverse=True)[:3]
@@ -237,50 +324,69 @@ def register():
     errors = {}
     form_data = {}
 
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
-        confirm = request.form.get('confirm_password', '')
+    if request.method == 'GET':
+        captcha_question = make_captcha()
+        return render_template('register.html', errors=errors, form_data=form_data,
+                               captcha_question=captcha_question)
 
-        form_data = {'username': username, 'email': email}
+    # Honeypot — bots fill hidden fields, humans don't
+    if request.form.get('website', ''):
+        return redirect(url_for('index'))
 
-        if not username:
-            errors['username'] = 'Username is required.'
-        elif len(username) < 3:
-            errors['username'] = 'Username must be at least 3 characters.'
-        elif len(username) > 20:
-            errors['username'] = 'Username must be 20 characters or fewer.'
-        elif not username.replace('_', '').isalnum():
-            errors['username'] = 'Username can only contain letters, numbers, and underscores.'
-        elif User.query.filter_by(username=username).first():
-            errors['username'] = 'That username is already taken.'
+    username = request.form.get('username', '').strip()
+    email = request.form.get('email', '').strip().lower()
+    password = request.form.get('password', '')
+    confirm = request.form.get('confirm_password', '')
+    captcha_input = request.form.get('captcha', '').strip()
 
-        if not email:
-            errors['email'] = 'Email is required.'
-        elif '@' not in email or '.' not in email.split('@')[-1]:
-            errors['email'] = 'Please enter a valid email address.'
-        elif User.query.filter_by(email=email).first():
-            errors['email'] = 'An account with that email already exists.'
+    form_data = {'username': username, 'email': email}
 
-        if not password:
-            errors['password'] = 'Password is required.'
-        elif len(password) < 6:
-            errors['password'] = 'Password must be at least 6 characters.'
+    try:
+        if not captcha_input or int(captcha_input) != session.get('captcha_answer'):
+            errors['captcha'] = 'Incorrect answer — please try again.'
+    except ValueError:
+        errors['captcha'] = 'Please enter a number.'
 
-        if password and not errors.get('password') and password != confirm:
-            errors['confirm_password'] = 'Passwords do not match.'
+    if not username:
+        errors['username'] = 'Username is required.'
+    elif len(username) < 3:
+        errors['username'] = 'Username must be at least 3 characters.'
+    elif len(username) > 20:
+        errors['username'] = 'Username must be 20 characters or fewer.'
+    elif not username.replace('_', '').isalnum():
+        errors['username'] = 'Username can only contain letters, numbers, and underscores.'
+    elif User.query.filter_by(username=username).first():
+        errors['username'] = 'That username is already taken.'
 
-        if not errors:
-            user = User(username=username, email=email)
-            user.set_password(password)
-            db.session.add(user)
-            db.session.commit()
-            login_user(user)
-            flash(f'Welcome to CineReview, {username}!', 'success')
-            return redirect(url_for('index'))
+    if not email:
+        errors['email'] = 'Email is required.'
+    elif '@' not in email or '.' not in email.split('@')[-1]:
+        errors['email'] = 'Please enter a valid email address.'
+    elif User.query.filter_by(email=email).first():
+        errors['email'] = 'An account with that email already exists.'
 
-    return render_template('register.html', errors=errors, form_data=form_data)
+    if not password:
+        errors['password'] = 'Password is required.'
+    else:
+        strength_issues = check_password_strength(password)
+        if strength_issues:
+            errors['password'] = f'Password must include: {", ".join(strength_issues)}.'
+
+    if password and not errors.get('password') and password != confirm:
+        errors['confirm_password'] = 'Passwords do not match.'
+
+    if errors:
+        captcha_question = make_captcha()
+        return render_template('register.html', errors=errors, form_data=form_data,
+                               captcha_question=captcha_question)
+
+    user = User(username=username, email=email)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    login_user(user)
+    flash(f'Welcome to CineReview, {username}!', 'success')
+    return redirect(url_for('index'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -292,6 +398,9 @@ def login():
     form_data = {}
 
     if request.method == 'POST':
+        if request.form.get('website', ''):
+            return redirect(url_for('index'))
+
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         form_data = {'username': username}
@@ -322,11 +431,79 @@ def logout():
     return redirect(url_for('index'))
 
 
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    errors = {}
+    submitted = False
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+
+        if not email:
+            errors['email'] = 'Email is required.'
+        elif '@' not in email or '.' not in email.split('@')[-1]:
+            errors['email'] = 'Please enter a valid email address.'
+
+        if not errors:
+            user = User.query.filter_by(email=email).first()
+            if user:
+                token = generate_reset_token(email)
+                send_reset_email(user, token)
+            # Always show success — don't reveal whether the email exists
+            submitted = True
+
+    return render_template('forgot_password.html', errors=errors, submitted=submitted)
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    email = verify_reset_token(token)
+    if not email:
+        flash('That reset link is invalid or has expired.', 'error')
+        return redirect(url_for('forgot_password'))
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        flash('Account not found.', 'error')
+        return redirect(url_for('forgot_password'))
+
+    errors = {}
+
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        confirm = request.form.get('confirm_password', '')
+
+        if not password:
+            errors['password'] = 'Password is required.'
+        else:
+            strength_issues = check_password_strength(password)
+            if strength_issues:
+                errors['password'] = f'Password must include: {", ".join(strength_issues)}.'
+
+        if password and not errors.get('password') and password != confirm:
+            errors['confirm_password'] = 'Passwords do not match.'
+
+        if not errors:
+            user.set_password(password)
+            db.session.commit()
+            flash('Your password has been updated. Please log in.', 'success')
+            return redirect(url_for('login'))
+
+    return render_template('reset_password.html', errors=errors, token=token)
+
+
 @app.route('/about')
 def about():
     total_reviews = Review.query.count()
     top_movie = max(MOVIES, key=lambda m: m['rating'])
-    return render_template('about.html', total_reviews=total_reviews, top_movie=top_movie, movie_count=len(MOVIES))
+    return render_template('about.html', total_reviews=total_reviews,
+                           top_movie=top_movie, movie_count=len(MOVIES))
 
 
 with app.app_context():
