@@ -8,12 +8,59 @@
     <p class="subtitle">Browse our collection of {{ movies | length }} films</p>
 </div>
 
+<div class="suggestions-bar">
+    <button class="btn btn-primary" id="suggest-btn" onclick="loadSuggestions()">
+        &#9733; Suggest a Movie for Me
+    </button>
+    <div id="suggestions-panel" class="suggestions-panel hidden">
+        <div class="suggestions-header">
+            <span id="suggestions-reason" class="suggestions-reason"></span>
+            <button class="dismiss-btn" onclick="dismissSuggestions()">&times;</button>
+        </div>
+        <div id="suggestions-list" class="suggestions-list"></div>
+    </div>
+</div>
+
 <div class="genre-tags">
     <span class="genre-label">Genres:</span>
     {% for genre in genres %}
         <span class="tag">{{ genre }}</span>
     {% endfor %}
 </div>
+
+<script>
+function loadSuggestions() {
+    const btn = document.getElementById('suggest-btn');
+    const panel = document.getElementById('suggestions-panel');
+    btn.textContent = 'Loading...';
+    btn.disabled = true;
+
+    fetch('/suggestions')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('suggestions-reason').textContent = data.reason;
+            const list = document.getElementById('suggestions-list');
+            list.innerHTML = data.suggestions.map(m => `
+                <a href="/movie/${m.id}" class="suggestion-card">
+                    <div class="suggestion-title">${m.title}</div>
+                    <div class="suggestion-meta">
+                        <span class="tag">${m.genre}</span>
+                        <span class="year">${m.year}</span>
+                        <span class="rating-badge">${m.rating}/10</span>
+                    </div>
+                </a>
+            `).join('');
+            panel.classList.remove('hidden');
+            btn.textContent = '↻ Refresh Suggestions';
+            btn.disabled = false;
+        });
+}
+
+function dismissSuggestions() {
+    document.getElementById('suggestions-panel').classList.add('hidden');
+    document.getElementById('suggest-btn').textContent = '✦ Suggest a Movie for Me';
+}
+</script>
 
 <div class="movie-grid">
     {% for movie in movies %}

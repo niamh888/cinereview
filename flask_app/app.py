@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 
 app = Flask(__name__)
 app.secret_key = 'ucd-flask-assignment-secret'
@@ -132,6 +132,32 @@ def add_review():
         form_data['movie_id'] = preselect
 
     return render_template('add_review.html', movies=MOVIES, errors=errors, form_data=form_data)
+
+
+@app.route('/suggestions')
+def suggestions():
+    good_reviews = [r for r in reviews if r['rating'] >= 4]
+
+    if good_reviews:
+        genre_counts = {}
+        for r in good_reviews:
+            movie = next((m for m in MOVIES if m['id'] == r['movie_id']), None)
+            if movie:
+                genre = movie['genre']
+                genre_counts[genre] = genre_counts.get(genre, 0) + 1
+
+        top_genre = max(genre_counts, key=genre_counts.get)
+        picks = sorted(
+            [m for m in MOVIES if m['genre'] == top_genre],
+            key=lambda m: m['rating'],
+            reverse=True
+        )[:3]
+        reason = f'Based on highly-rated {top_genre} reviews'
+    else:
+        picks = sorted(MOVIES, key=lambda m: m['rating'], reverse=True)[:3]
+        reason = 'Top rated films in our catalogue'
+
+    return jsonify({'suggestions': picks, 'reason': reason})
 
 
 @app.route('/about')
