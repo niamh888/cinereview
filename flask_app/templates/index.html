@@ -1,11 +1,10 @@
 {% extends "base.html" %}
-
-{% block title %}CineReview — All Movies{% endblock %}
+{% block title %}CineReview — Discover Movies{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1>Movie Reviews</h1>
-    <p class="subtitle">Browse our collection of {{ movies | length }} films</p>
+    <h1>Discover Movies</h1>
+    <p class="subtitle">Live data from The Movie Database</p>
 </div>
 
 <div class="suggestions-bar">
@@ -21,36 +20,52 @@
     </div>
 </div>
 
-<div class="genre-tags">
-    <span class="genre-label">Genres:</span>
-    {% for genre in genres %}
-        <span class="tag">{{ genre }}</span>
+<div class="category-tabs">
+    {% for key, label in categories.items() %}
+        <a href="{{ url_for('index', category=key) }}"
+           class="tab {% if category == key %}active{% endif %}">
+            {{ label }}
+        </a>
     {% endfor %}
 </div>
 
-<div class="movie-grid">
+{% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
+<div class="poster-grid">
     {% for movie in movies %}
-    <div class="movie-card">
-        <div class="movie-card-header">
-            <h2 class="movie-title">
+    <div class="poster-card {% if movie.id in watched_ids %}is-watched{% endif %}">
+        <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="poster-link">
+            {% if movie.poster_path %}
+                <img class="movie-poster-img"
+                     src="{{ poster_url(movie.poster_path, 'w342') }}"
+                     alt="{{ movie.title }}" loading="lazy">
+            {% else %}
+                <div class="no-poster">{{ movie.title }}</div>
+            {% endif %}
+            {% if movie.id in watched_ids %}
+                <span class="watched-overlay">&#10003; Watched</span>
+            {% endif %}
+        </a>
+        <div class="poster-card-body">
+            <h2 class="poster-title">
                 <a href="{{ url_for('movie_detail', movie_id=movie.id) }}">{{ movie.title }}</a>
             </h2>
-            <div class="card-badges">
-                {% if movie.id in watched_ids %}
-                    <span class="watched-badge">&#10003; Watched</span>
+            <div class="poster-meta">
+                {% set gnames = genre_names(movie.genre_ids) %}
+                {% if gnames %}
+                    <span class="tag">{{ gnames[0] }}</span>
                 {% endif %}
-                <span class="rating-badge">{{ movie.rating }}/10</span>
+                <span class="year">{{ movie.release_date[:4] if movie.release_date else '—' }}</span>
+                <span class="rating-badge">&#9733; {{ '%.1f' % movie.vote_average }}</span>
             </div>
-        </div>
-        <div class="movie-meta">
-            <span class="tag">{{ movie.genre }}</span>
-            <span class="year">{{ movie.year }}</span>
-            <span class="director">Dir. {{ movie.director }}</span>
-        </div>
-        <p class="movie-desc">{{ movie.description }}</p>
-        <div class="card-actions">
-            <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="btn btn-secondary">View Details</a>
-            <a href="{{ url_for('add_review', movie_id=movie.id) }}" class="btn btn-primary">Review</a>
+            <div class="card-actions">
+                <a href="{{ url_for('movie_detail', movie_id=movie.id) }}"
+                   class="btn btn-secondary btn-sm">Details</a>
+                <a href="{{ url_for('add_review', movie_id=movie.id) }}"
+                   class="btn btn-primary btn-sm">Review</a>
+            </div>
         </div>
     </div>
     {% endfor %}
@@ -59,7 +74,6 @@
 <script>
 function loadSuggestions() {
     const btn = document.getElementById('suggest-btn');
-    const panel = document.getElementById('suggestions-panel');
     btn.textContent = 'Loading...';
     btn.disabled = true;
 
@@ -70,15 +84,20 @@ function loadSuggestions() {
             const list = document.getElementById('suggestions-list');
             list.innerHTML = data.suggestions.map(m => `
                 <a href="/movie/${m.id}" class="suggestion-card">
-                    <div class="suggestion-title">${m.title}</div>
-                    <div class="suggestion-meta">
-                        <span class="tag">${m.genre}</span>
-                        <span class="year">${m.year}</span>
-                        <span class="rating-badge">${m.rating}/10</span>
+                    ${m.poster
+                        ? `<img class="suggestion-poster" src="${m.poster}" alt="${m.title}">`
+                        : `<div class="suggestion-no-poster"></div>`}
+                    <div class="suggestion-info">
+                        <div class="suggestion-title">${m.title}</div>
+                        <div class="suggestion-meta">
+                            ${m.genre ? `<span class="tag">${m.genre}</span>` : ''}
+                            <span class="year">${m.year}</span>
+                            <span class="rating-badge">&#9733; ${m.rating}</span>
+                        </div>
                     </div>
                 </a>
             `).join('');
-            panel.classList.remove('hidden');
+            document.getElementById('suggestions-panel').classList.remove('hidden');
             btn.textContent = '↻ Refresh Suggestions';
             btn.disabled = false;
         });
@@ -86,7 +105,7 @@ function loadSuggestions() {
 
 function dismissSuggestions() {
     document.getElementById('suggestions-panel').classList.add('hidden');
-    document.getElementById('suggest-btn').textContent = '✦ Suggest a Movie for Me';
+    document.getElementById('suggest-btn').textContent = '&#9733; Suggest a Movie for Me';
 }
 </script>
 {% endblock %}

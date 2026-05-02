@@ -1,46 +1,48 @@
 {% extends "base.html" %}
-
 {% block title %}About — CineReview{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <h1>About CineReview</h1>
-    <p class="subtitle">A simple movie review application built with Flask</p>
+    <p class="subtitle">A personal movie tracking app powered by TMDB</p>
 </div>
 
 <div class="about-container">
 
     <div class="stats-grid">
         <div class="stat-card">
-            <span class="stat-number">{{ movie_count }}</span>
-            <span class="stat-label">Movies Listed</span>
-        </div>
-        <div class="stat-card">
             <span class="stat-number">{{ total_reviews }}</span>
-            <span class="stat-label">Reviews Submitted</span>
+            <span class="stat-label">Reviews Written</span>
         </div>
         <div class="stat-card">
-            <span class="stat-number">{{ top_movie.rating }}</span>
-            <span class="stat-label">Highest Rated Film</span>
+            <span class="stat-number">{{ total_watched }}</span>
+            <span class="stat-label">Films Watched</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ total_users }}</span>
+            <span class="stat-label">Members</span>
         </div>
     </div>
 
     <div class="about-card">
-        <h2>Top Rated Film</h2>
+        <h2>What is CineReview?</h2>
         <p>
-            Currently the highest rated film in our collection is
-            <a href="{{ url_for('movie_detail', movie_id=top_movie.id) }}"><strong>{{ top_movie.title }}</strong></a>
-            ({{ top_movie.year }}) with a score of <strong>{{ top_movie.rating }}/10</strong>.
+            CineReview connects to The Movie Database (TMDB) to give you access to hundreds of
+            thousands of films — new releases, classics, and everything in between.
+            Create an account to track what you've watched, write reviews, and get personalised
+            suggestions based on your taste.
         </p>
     </div>
 
     <div class="about-card">
-        <h2>How It Works</h2>
+        <h2>How to Use It</h2>
         <ul class="about-list">
-            <li>Browse the <a href="{{ url_for('index') }}">movie catalogue</a> on the home page.</li>
-            <li>Click any film to see its details and read user reviews.</li>
-            <li>Use the <a href="{{ url_for('add_review') }}">Write a Review</a> page to submit your own review.</li>
-            <li>All fields are validated before your review is accepted.</li>
+            <li>Browse <strong>Now Playing</strong>, <strong>Popular</strong>,
+                <strong>Top Rated</strong> or <strong>Upcoming</strong> on the home page.</li>
+            <li>Use the <strong>search bar</strong> to find any film by title.</li>
+            <li>Open a film and click <strong>Mark as Watched</strong> to add it to your list.</li>
+            <li>Click <strong>Suggest a Movie</strong> for personalised recommendations.</li>
+            <li>Write and read reviews on every film page.</li>
         </ul>
     </div>
 
@@ -48,9 +50,10 @@
         <h2>Tech Stack</h2>
         <ul class="about-list">
             <li><strong>Flask</strong> — Python web framework</li>
-            <li><strong>Jinja2</strong> — HTML templating (template inheritance, loops, conditionals)</li>
-            <li><strong>Python</strong> — server-side data and form validation logic</li>
-            <li><strong>CSS</strong> — custom stylesheet, no external libraries</li>
+            <li><strong>Jinja2</strong> — HTML templating with inheritance, loops, conditionals</li>
+            <li><strong>SQLite + Flask-SQLAlchemy</strong> — persistent database</li>
+            <li><strong>Flask-Login</strong> — user authentication and sessions</li>
+            <li><strong>TMDB API</strong> — live movie data, posters, and cast information</li>
         </ul>
     </div>
 

@@ -1,50 +1,91 @@
 {% extends "base.html" %}
-
 {% block title %}{{ movie.title }} — CineReview{% endblock %}
 
 {% block content %}
 <div class="back-link">
-    <a href="{{ url_for('index') }}">&larr; Back to all movies</a>
+    <a href="{{ url_for('index') }}">&larr; Back to movies</a>
 </div>
 
-<div class="movie-detail">
-    <div class="movie-detail-header">
-        <div>
-            <h1>{{ movie.title }}</h1>
-            <div class="movie-meta">
-                <span class="tag">{{ movie.genre }}</span>
-                <span class="year">{{ movie.year }}</span>
-                <span class="director">Directed by {{ movie.director }}</span>
-            </div>
-        </div>
-        <div class="rating-large">
-            <span class="rating-number">{{ movie.rating }}</span>
-            <span class="rating-denom">/10</span>
-        </div>
-    </div>
-
-    <p class="movie-description">{{ movie.description }}</p>
-
-    <div class="detail-actions">
-        {% if current_user.is_authenticated %}
-            <button
-                class="btn {% if watched %}btn-watched{% else %}btn-secondary{% endif %}"
-                id="watched-btn"
-                data-movie-id="{{ movie.id }}"
-                onclick="toggleWatched(this)">
-                <span id="watched-text">{% if watched %}&#10003; Watched{% else %}Mark as Watched{% endif %}</span>
-            </button>
+<div class="movie-hero">
+    <div class="movie-hero-poster">
+        {% if movie.poster_path %}
+            <img src="{{ poster_url(movie.poster_path, 'w500') }}"
+                 alt="{{ movie.title }}" class="detail-poster">
         {% else %}
-            <a href="{{ url_for('login') }}" class="btn btn-secondary">Log in to track watched</a>
+            <div class="no-poster large">{{ movie.title }}</div>
         {% endif %}
-        <a href="{{ url_for('add_review', movie_id=movie.id) }}" class="btn btn-primary">Write a Review</a>
+    </div>
+
+    <div class="movie-hero-info">
+        <h1>{{ movie.title }}</h1>
+        {% if movie.tagline %}
+            <p class="tagline">"{{ movie.tagline }}"</p>
+        {% endif %}
+
+        <div class="movie-meta hero-meta">
+            {% for genre in movie.genres %}
+                <span class="tag">{{ genre.name }}</span>
+            {% endfor %}
+            <span class="year">{{ movie.release_date[:4] if movie.release_date else '—' }}</span>
+            {% if movie.runtime %}
+                <span class="runtime">{{ movie.runtime }} min</span>
+            {% endif %}
+            {% if director %}
+                <span class="director">Dir. {{ director }}</span>
+            {% endif %}
+        </div>
+
+        <div class="tmdb-rating">
+            <span class="rating-star">&#9733;</span>
+            <span class="rating-number">{{ '%.1f' % movie.vote_average }}</span>
+            <span class="rating-denom">/ 10 &nbsp;TMDB</span>
+        </div>
+
+        <p class="movie-description">{{ movie.overview }}</p>
+
+        <div class="detail-actions">
+            {% if current_user.is_authenticated %}
+                <button class="btn {% if watched %}btn-watched{% else %}btn-secondary{% endif %}"
+                        id="watched-btn"
+                        data-movie-id="{{ movie.id }}"
+                        onclick="toggleWatched(this)">
+                    <span id="watched-text">
+                        {% if watched %}&#10003; Watched{% else %}Mark as Watched{% endif %}
+                    </span>
+                </button>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-secondary">Log in to track watched</a>
+            {% endif %}
+            <a href="{{ url_for('add_review', movie_id=movie.id) }}" class="btn btn-primary">
+                Write a Review
+            </a>
+        </div>
     </div>
 </div>
+
+{% if cast %}
+<section class="cast-section">
+    <h2>Cast</h2>
+    <div class="cast-grid">
+        {% for actor in cast %}
+        <div class="actor-card">
+            {% if actor.profile_path %}
+                <img class="actor-photo"
+                     src="{{ profile_url(actor.profile_path) }}"
+                     alt="{{ actor.name }}" loading="lazy">
+            {% else %}
+                <div class="actor-photo no-photo">&#128100;</div>
+            {% endif %}
+            <div class="actor-name">{{ actor.name }}</div>
+            <div class="actor-character">{{ actor.character }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
 
 <section class="reviews-section">
-    <h2>User Reviews
-        <span class="review-count">({{ reviews | length }})</span>
-    </h2>
+    <h2>User Reviews <span class="review-count">({{ reviews | length }})</span></h2>
 
     {% if reviews %}
         {% for review in reviews %}
@@ -53,11 +94,7 @@
                 <strong class="reviewer-name">{{ review.name }}</strong>
                 <div class="star-rating">
                     {% for i in range(1, 6) %}
-                        {% if i <= review.rating %}
-                            <span class="star filled">&#9733;</span>
-                        {% else %}
-                            <span class="star">&#9734;</span>
-                        {% endif %}
+                        <span class="star {% if i <= review.rating %}filled{% endif %}">&#9733;</span>
                     {% endfor %}
                     <span class="rating-text">{{ review.rating }}/5</span>
                 </div>
@@ -68,7 +105,9 @@
     {% else %}
         <div class="empty-state">
             <p>No reviews yet for this film.</p>
-            <a href="{{ url_for('add_review', movie_id=movie.id) }}" class="btn btn-primary">Be the first to review</a>
+            <a href="{{ url_for('add_review', movie_id=movie.id) }}" class="btn btn-primary">
+                Be the first to review
+            </a>
         </div>
     {% endif %}
 </section>
@@ -77,19 +116,16 @@
 function toggleWatched(btn) {
     const movieId = btn.dataset.movieId;
     btn.disabled = true;
-
     fetch(`/toggle-watched/${movieId}`, { method: 'POST' })
         .then(res => res.json())
         .then(data => {
             const text = document.getElementById('watched-text');
             if (data.watched) {
                 text.textContent = '✓ Watched';
-                btn.classList.remove('btn-secondary');
-                btn.classList.add('btn-watched');
+                btn.classList.replace('btn-secondary', 'btn-watched');
             } else {
                 text.textContent = 'Mark as Watched';
-                btn.classList.remove('btn-watched');
-                btn.classList.add('btn-secondary');
+                btn.classList.replace('btn-watched', 'btn-secondary');
             }
             btn.disabled = false;
         });

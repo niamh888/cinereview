@@ -1,72 +1,64 @@
 {% extends "base.html" %}
-
 {% block title %}My Movies — CineReview{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <h1>My Movies</h1>
     <p class="subtitle">
-        {{ watched_movies | length }} watched &mdash;
-        {{ unwatched_movies | length }} still to see
+        {% if watched_movies %}
+            {{ watched_movies | length }} film{{ 's' if watched_movies | length != 1 }} watched
+        {% else %}
+            You haven't marked any films as watched yet
+        {% endif %}
     </p>
 </div>
 
-<section class="my-movies-section">
-    <h2 class="section-heading">&#10003; Watched</h2>
-
-    {% if watched_movies %}
-        <div class="movie-list">
-            {% for movie in watched_movies %}
-            <div class="list-card">
-                <div class="list-card-left">
-                    <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="list-title">{{ movie.title }}</a>
-                    <div class="movie-meta">
-                        <span class="tag">{{ movie.genre }}</span>
-                        <span class="year">{{ movie.year }}</span>
-                        <span class="director">Dir. {{ movie.director }}</span>
-                    </div>
-                </div>
-                <div class="list-card-right">
-                    <span class="rating-badge">{{ movie.rating }}/10</span>
-                    <span class="watched-badge">&#10003; Watched</span>
-                </div>
+{% if watched_movies %}
+<div class="poster-grid">
+    {% for movie in watched_movies %}
+    <div class="poster-card is-watched">
+        <a href="{{ url_for('movie_detail', movie_id=movie.tmdb_id) }}" class="poster-link">
+            {% if movie.poster_path %}
+                <img class="movie-poster-img"
+                     src="{{ poster_url(movie.poster_path, 'w342') }}"
+                     alt="{{ movie.title }}" loading="lazy">
+            {% else %}
+                <div class="no-poster">{{ movie.title }}</div>
+            {% endif %}
+            <span class="watched-overlay">&#10003; Watched</span>
+        </a>
+        <div class="poster-card-body">
+            <h2 class="poster-title">
+                <a href="{{ url_for('movie_detail', movie_id=movie.tmdb_id) }}">{{ movie.title }}</a>
+            </h2>
+            <div class="poster-meta">
+                {% if movie.genres %}
+                    <span class="tag">{{ movie.genres.split(',')[0].strip() }}</span>
+                {% endif %}
+                <span class="year">{{ movie.year }}</span>
+                {% if movie.vote_average %}
+                    <span class="rating-badge">&#9733; {{ '%.1f' % movie.vote_average }}</span>
+                {% endif %}
             </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="empty-state">
-            <p>You haven't marked any films as watched yet.</p>
-            <a href="{{ url_for('index') }}" class="btn btn-primary">Browse movies</a>
-        </div>
-    {% endif %}
-</section>
-
-<section class="my-movies-section">
-    <h2 class="section-heading">&#9675; Still to Watch</h2>
-
-    {% if unwatched_movies %}
-        <div class="movie-list">
-            {% for movie in unwatched_movies %}
-            <div class="list-card">
-                <div class="list-card-left">
-                    <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="list-title">{{ movie.title }}</a>
-                    <div class="movie-meta">
-                        <span class="tag">{{ movie.genre }}</span>
-                        <span class="year">{{ movie.year }}</span>
-                        <span class="director">Dir. {{ movie.director }}</span>
-                    </div>
-                </div>
-                <div class="list-card-right">
-                    <span class="rating-badge">{{ movie.rating }}/10</span>
-                    <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="btn btn-secondary btn-sm">Mark Watched</a>
-                </div>
+            <div class="card-actions">
+                <a href="{{ url_for('movie_detail', movie_id=movie.tmdb_id) }}"
+                   class="btn btn-secondary btn-sm">Details</a>
+                <a href="{{ url_for('add_review', movie_id=movie.tmdb_id) }}"
+                   class="btn btn-primary btn-sm">Review</a>
             </div>
-            {% endfor %}
         </div>
-    {% else %}
-        <div class="empty-state">
-            <p>You've watched everything in the catalogue!</p>
-        </div>
-    {% endif %}
-</section>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+    <div class="empty-state">
+        <p>Your watch list is empty.</p>
+        <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+            Open any movie and click <strong>Mark as Watched</strong>.
+        </p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary" style="margin-top: 1rem;">
+            Browse Movies
+        </a>
+    </div>
+{% endif %}
 {% endblock %}

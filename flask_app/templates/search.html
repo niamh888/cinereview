@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Search — CineReview{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Search Results</h1>
+    {% if query %}
+        <p class="subtitle">{{ movies | length }} result{{ 's' if movies | length != 1 }} for
+            "<strong>{{ query }}</strong>"
+        </p>
+    {% else %}
+        <p class="subtitle">Enter a movie title in the search bar above</p>
+    {% endif %}
+</div>
+
+{% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
+{% if movies %}
+<div class="poster-grid">
+    {% for movie in movies %}
+    <div class="poster-card {% if movie.id in watched_ids %}is-watched{% endif %}">
+        <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="poster-link">
+            {% if movie.poster_path %}
+                <img class="movie-poster-img"
+                     src="{{ poster_url(movie.poster_path, 'w342') }}"
+                     alt="{{ movie.title }}" loading="lazy">
+            {% else %}
+                <div class="no-poster">{{ movie.title }}</div>
+            {% endif %}
+            {% if movie.id in watched_ids %}
+                <span class="watched-overlay">&#10003; Watched</span>
+            {% endif %}
+        </a>
+        <div class="poster-card-body">
+            <h2 class="poster-title">
+                <a href="{{ url_for('movie_detail', movie_id=movie.id) }}">{{ movie.title }}</a>
+            </h2>
+            <div class="poster-meta">
+                {% set gnames = genre_names(movie.genre_ids) %}
+                {% if gnames %}
+                    <span class="tag">{{ gnames[0] }}</span>
+                {% endif %}
+                <span class="year">{{ movie.release_date[:4] if movie.release_date else '—' }}</span>
+                <span class="rating-badge">&#9733; {{ '%.1f' % movie.vote_average }}</span>
+            </div>
+            <div class="card-actions">
+                <a href="{{ url_for('movie_detail', movie_id=movie.id) }}"
+                   class="btn btn-secondary btn-sm">Details</a>
+                <a href="{{ url_for('add_review', movie_id=movie.id) }}"
+                   class="btn btn-primary btn-sm">Review</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% elif query and not error %}
+    <div class="empty-state">
+        <p>No results found for "{{ query }}".</p>
+        <p style="margin-top: 0.5rem; font-size: 0.9rem;">Try a different spelling or a partial title.</p>
+    </div>
+{% endif %}
+{% endblock %}
