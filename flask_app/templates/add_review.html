@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Write a Review — CineReview{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Write a Review</h1>
+    <p class="subtitle">Share your thoughts on a film</p>
+</div>
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('add_review') }}" novalidate>
+
+        <div class="form-group {% if errors.name %}has-error{% endif %}">
+            <label for="name">Your Name</label>
+            <input
+                type="text"
+                id="name"
+                name="name"
+                value="{{ form_data.get('name', '') }}"
+                placeholder="e.g. Jane Smith"
+                maxlength="100"
+            >
+            {% if errors.name %}
+                <span class="error-msg">{{ errors.name }}</span>
+            {% endif %}
+        </div>
+
+        <div class="form-group {% if errors.movie_id %}has-error{% endif %}">
+            <label for="movie_id">Select Movie</label>
+            <select id="movie_id" name="movie_id">
+                <option value="">-- Choose a movie --</option>
+                {% for movie in movies %}
+                    <option value="{{ movie.id }}"
+                        {% if form_data.get('movie_id') | string == movie.id | string %}selected{% endif %}>
+                        {{ movie.title }} ({{ movie.year }})
+                    </option>
+                {% endfor %}
+            </select>
+            {% if errors.movie_id %}
+                <span class="error-msg">{{ errors.movie_id }}</span>
+            {% endif %}
+        </div>
+
+        <div class="form-group {% if errors.rating %}has-error{% endif %}">
+            <label for="rating">Your Rating (1–5)</label>
+            <select id="rating" name="rating">
+                <option value="">-- Select rating --</option>
+                {% for i in range(1, 6) %}
+                    <option value="{{ i }}"
+                        {% if form_data.get('rating') == i | string %}selected{% endif %}>
+                        {{ i }} star{% if i > 1 %}s{% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+            {% if errors.rating %}
+                <span class="error-msg">{{ errors.rating }}</span>
+            {% endif %}
+        </div>
+
+        <div class="form-group {% if errors.comment %}has-error{% endif %}">
+            <label for="comment">Review</label>
+            <textarea
+                id="comment"
+                name="comment"
+                rows="5"
+                placeholder="Write your thoughts here (at least 10 characters)..."
+                maxlength="1000"
+            >{{ form_data.get('comment', '') }}</textarea>
+            {% if errors.comment %}
+                <span class="error-msg">{{ errors.comment }}</span>
+            {% endif %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Submit Review</button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}About — CineReview{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>About CineReview</h1>
+    <p class="subtitle">A simple movie review application built with Flask</p>
+</div>
+
+<div class="about-container">
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-number">{{ movie_count }}</span>
+            <span class="stat-label">Movies Listed</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ total_reviews }}</span>
+            <span class="stat-label">Reviews Submitted</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ top_movie.rating }}</span>
+            <span class="stat-label">Highest Rated Film</span>
+        </div>
+    </div>
+
+    <div class="about-card">
+        <h2>Top Rated Film</h2>
+        <p>
+            Currently the highest rated film in our collection is
+            <a href="{{ url_for('movie_detail', movie_id=top_movie.id) }}"><strong>{{ top_movie.title }}</strong></a>
+            ({{ top_movie.year }}) with a score of <strong>{{ top_movie.rating }}/10</strong>.
+        </p>
+    </div>
+
+    <div class="about-card">
+        <h2>How It Works</h2>
+        <ul class="about-list">
+            <li>Browse the <a href="{{ url_for('index') }}">movie catalogue</a> on the home page.</li>
+            <li>Click any film to see its details and read user reviews.</li>
+            <li>Use the <a href="{{ url_for('add_review') }}">Write a Review</a> page to submit your own review.</li>
+            <li>All fields are validated before your review is accepted.</li>
+        </ul>
+    </div>
+
+    <div class="about-card">
+        <h2>Tech Stack</h2>
+        <ul class="about-list">
+            <li><strong>Flask</strong> — Python web framework</li>
+            <li><strong>Jinja2</strong> — HTML templating (template inheritance, loops, conditionals)</li>
+            <li><strong>Python</strong> — server-side data and form validation logic</li>
+            <li><strong>CSS</strong> — custom stylesheet, no external libraries</li>
+        </ul>
+    </div>
+
+</div>
+{% endblock %}

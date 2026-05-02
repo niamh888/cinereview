@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}CineReview — All Movies{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Movie Reviews</h1>
+    <p class="subtitle">Browse our collection of {{ movies | length }} films</p>
+</div>
+
+<div class="genre-tags">
+    <span class="genre-label">Genres:</span>
+    {% for genre in genres %}
+        <span class="tag">{{ genre }}</span>
+    {% endfor %}
+</div>
+
+<div class="movie-grid">
+    {% for movie in movies %}
+    <div class="movie-card">
+        <div class="movie-card-header">
+            <h2 class="movie-title">
+                <a href="{{ url_for('movie_detail', movie_id=movie.id) }}">{{ movie.title }}</a>
+            </h2>
+            <span class="rating-badge">{{ movie.rating }}/10</span>
+        </div>
+        <div class="movie-meta">
+            <span class="tag">{{ movie.genre }}</span>
+            <span class="year">{{ movie.year }}</span>
+            <span class="director">Dir. {{ movie.director }}</span>
+        </div>
+        <p class="movie-desc">{{ movie.description }}</p>
+        <div class="card-actions">
+            <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="btn btn-secondary">View Details</a>
+            <a href="{{ url_for('add_review', movie_id=movie.id) }}" class="btn btn-primary">Review</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

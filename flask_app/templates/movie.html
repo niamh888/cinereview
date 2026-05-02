@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ movie.title }} — CineReview{% endblock %}
+
+{% block content %}
+<div class="back-link">
+    <a href="{{ url_for('index') }}">&larr; Back to all movies</a>
+</div>
+
+<div class="movie-detail">
+    <div class="movie-detail-header">
+        <div>
+            <h1>{{ movie.title }}</h1>
+            <div class="movie-meta">
+                <span class="tag">{{ movie.genre }}</span>
+                <span class="year">{{ movie.year }}</span>
+                <span class="director">Directed by {{ movie.director }}</span>
+            </div>
+        </div>
+        <div class="rating-large">
+            <span class="rating-number">{{ movie.rating }}</span>
+            <span class="rating-denom">/10</span>
+        </div>
+    </div>
+
+    <p class="movie-description">{{ movie.description }}</p>
+
+    <a href="{{ url_for('add_review', movie_id=movie.id) }}" class="btn btn-primary">Write a Review</a>
+</div>
+
+<section class="reviews-section">
+    <h2>User Reviews
+        <span class="review-count">({{ reviews | length }})</span>
+    </h2>
+
+    {% if reviews %}
+        {% for review in reviews %}
+        <div class="review-card">
+            <div class="review-header">
+                <strong class="reviewer-name">{{ review.name }}</strong>
+                <div class="star-rating">
+                    {% for i in range(1, 6) %}
+                        {% if i <= review.rating %}
+                            <span class="star filled">&#9733;</span>
+                        {% else %}
+                            <span class="star">&#9734;</span>
+                        {% endif %}
+                    {% endfor %}
+                    <span class="rating-text">{{ review.rating }}/5</span>
+                </div>
+            </div>
+            <p class="review-comment">{{ review.comment }}</p>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <p>No reviews yet for this film.</p>
+            <a href="{{ url_for('add_review', movie_id=movie.id) }}" class="btn btn-primary">Be the first to review</a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}
