@@ -1,9 +1,8 @@
+import os
 import requests
 
-# ---- Configuration ----
-# Paste your free TMDB API key here.
-# Get one at: themoviedb.org → Settings → API → Request an API Key
-API_KEY = '370fd8222c137f1a48a5cf04d2bc9a70'
+# Set TMDB_API_KEY as an environment variable in production
+API_KEY = os.environ.get('TMDB_API_KEY', '370fd8222c137f1a48a5cf04d2bc9a70')
 
 BASE_URL = 'https://api.themoviedb.org/3'
 IMAGE_BASE = 'https://image.tmdb.org/t/p'

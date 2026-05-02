@@ -5,24 +5,29 @@ from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer
 from datetime import datetime
+import os
 import re
 import random
 import tmdb
 
 app = Flask(__name__)
-app.secret_key = 'ucd-flask-assignment-secret'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cinereview.db'
+
+# Secret key — set SECRET_KEY environment variable in production
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-only-key-change-in-production')
+
+# Database — uses PostgreSQL in production (DATABASE_URL env var), SQLite locally
+_db_url = os.environ.get('DATABASE_URL', 'sqlite:///cinereview.db')
+if _db_url.startswith('postgres://'):
+    _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = _db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# ---- Email Configuration ----
-# 1. Enable 2-Step Verification: myaccount.google.com/security
-# 2. Create an App Password: myaccount.google.com/apppasswords
-# 3. Replace the two values below
+# Email — set MAIL_USERNAME and MAIL_PASSWORD environment variables in production
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your-email@gmail.com'
-app.config['MAIL_PASSWORD'] = 'your-app-password-here'
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
 
 db = SQLAlchemy(app)
 mail = Mail(app)
@@ -587,4 +592,4 @@ with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true')
