@@ -117,6 +117,90 @@ a:hover {
     color: #e76f51;
 }
 
+/* ---- Suggestions ---- */
+.suggestions-bar {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.suggestions-panel {
+    background: #1a1a24;
+    border: 1px solid #3a5ccc;
+    border-radius: 10px;
+    padding: 1.25rem;
+}
+
+.suggestions-panel.hidden {
+    display: none;
+}
+
+.suggestions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.suggestions-reason {
+    font-size: 0.9rem;
+    color: #9898b0;
+    font-style: italic;
+}
+
+.dismiss-btn {
+    background: none;
+    border: none;
+    color: #666677;
+    font-size: 1.3rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 0.2rem;
+}
+
+.dismiss-btn:hover {
+    color: #e2e2e8;
+}
+
+.suggestions-list {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.suggestion-card {
+    background: #252535;
+    border: 1px solid #2e2e42;
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 180px;
+    transition: border-color 0.15s;
+    text-decoration: none;
+}
+
+.suggestion-card:hover {
+    border-color: #7c9ef0;
+    text-decoration: none;
+}
+
+.suggestion-title {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.95rem;
+}
+
+.suggestion-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
 /* ---- Tags & Badges ---- */
 .tag {
     display: inline-block;
