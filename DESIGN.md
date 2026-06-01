@@ -180,6 +180,179 @@ A reference document describing the visual design, colour palette, layout, and c
 
 ---
 
+## CSS Selectors
+
+### Selector Types Used
+
+This project uses a range of CSS selector types to target elements precisely and keep styles maintainable.
+
+| Selector type | Example from `style.css` | What it targets |
+|---|---|---|
+| **Element** | `body`, `a`, `*` | Every instance of that HTML tag |
+| **Class** | `.navbar`, `.btn`, `.poster-card` | Any element with that class attribute |
+| **Pseudo-class** | `a:hover`, `input:focus`, `.tab.active` | An element in a specific state |
+| **Pseudo-element** | `*::before`, `input::placeholder`, `li::before` | A generated part of an element |
+| **Compound** (two classes) | `.poster-card.is-watched`, `.star.filled`, `.tab.active` | An element that has both classes simultaneously |
+| **Descendant** | `.nav-search input`, `.poster-title a`, `.about-card h2` | An element nested inside another |
+| **Compound + Descendant** | `.filter-bar .btn.active`, `.form-group.has-error input` | A nested element that also carries a specific class |
+
+---
+
+### Why No ID Selectors Were Used
+
+No `#id` selectors appear anywhere in `style.css`. This is a deliberate choice based on two CSS fundamentals:
+
+**1. IDs must be unique per page.**
+An HTML `id` attribute can only appear once on any given page. A CSS rule like `#poster-card` could therefore only ever style a single element. Classes have no such restriction — the same class can be applied to dozens of elements, which is exactly what `.poster-card` does across the movie grid.
+
+**2. IDs have very high specificity.**
+CSS specificity determines which rule wins when two rules target the same element. IDs carry a specificity weight of `(1, 0, 0)` — far higher than classes `(0, 1, 0)` or elements `(0, 0, 1)`. A style set via an ID selector is extremely difficult to override later without resorting to `!important` or adding even more specific selectors, which makes the stylesheet fragile and hard to maintain.
+
+By using only class selectors, every style in this project can be:
+- **Reused** — apply `.btn-primary` to any button on any page
+- **Overridden cleanly** — add a second class (e.g. `.btn-sm`) to adjust without fighting specificity
+- **Combined** — compound selectors like `.poster-card.is-watched` layer behaviour without duplicating rules
+
+---
+
+## Passing Python Data Structures to Templates
+
+Flask's `render_template()` function accepts keyword arguments that become variables inside the Jinja2 template. Any Python object can be passed this way — lists, dictionaries, sets, booleans, or plain values — and Jinja2 accesses them by the keyword name used in the call.
+
+```python
+return render_template('index.html', movies=movies, categories=CATEGORIES, watched_ids=watched_ids)
+#                                     ↑ template var  ↑ Python object
+```
+
+---
+
+### Lists
+
+A **list** holds an ordered sequence of items. In templates, lists are most useful when you need to loop through every item and render a repeated block of HTML.
+
+**Example — `movies` list passed to the home page (`index` route, line 221):**
+
+```python
+# app.py
+movies = tmdb.now_playing()   # returns a list of movie dictionaries from the TMDB API
+return render_template('index.html', movies=movies, ...)
+```
+
+```html
+<!-- index.html -->
+{% for movie in movies %}
+    <div class="poster-card">
+        <h2>{{ movie.title }}</h2>
+    </div>
+{% endfor %}
+```
+
+The template has no knowledge of how many films are in the list — Jinja2 simply repeats the block once per item. Adding or removing movies in Python requires no HTML changes.
+
+**Other lists used:**
+
+| Variable | Route | Contents |
+|---|---|---|
+| `movies` | `index`, `search` | List of movie dicts from TMDB |
+| `cast` | `movie_detail` | List of actor dicts from TMDB |
+| `reviews` | `movie_detail` | List of `Review` database objects |
+| `watched_movies` | `my_movies` | List of `MovieCache` database objects |
+
+---
+
+### Dictionaries
+
+A **dictionary** maps keys to values. In templates, dictionaries are useful in two ways: looping through all key-value pairs with `.items()`, or accessing a specific value by key name.
+
+**Example 1 — `CATEGORIES` dictionary iterated to build the category tabs (`index` route, line 221):**
+
+```python
+# app.py
+CATEGORIES = {
+    'now_playing': 'Now Playing',
+    'popular':     'Popular',
+    'top_rated':   'Top Rated',
+    'upcoming':    'Upcoming',
+}
+return render_template('index.html', categories=CATEGORIES, ...)
+```
+
+```html
+<!-- index.html -->
+{% for key, label in categories.items() %}
+    <a href="{{ url_for('index', category=key) }}" class="tab">{{ label }}</a>
+{% endfor %}
+```
+
+Adding a new category only requires a change in `app.py` — the template updates automatically.
+
+---
+
+**Example 2 — `errors` and `form_data` dictionaries for form validation (`add_review` route, line 381):**
+
+```python
+# app.py
+errors   = {'name': 'Your name is required.', 'comment': 'Comment too short.'}
+form_data = {'name': 'Alice', 'rating': '3', 'comment': 'Gr'}
+return render_template('add_review.html', errors=errors, form_data=form_data)
+```
+
+```html
+<!-- add_review.html -->
+<input name="name" value="{{ form_data.name }}">
+{% if errors.name %}
+    <span class="error-msg">{{ errors.name }}</span>
+{% endif %}
+```
+
+The `errors` dictionary uses field names as keys so the template can display the right message next to the right input. The `form_data` dictionary repopulates each field with what the user typed, so they don't have to retype everything after a validation failure.
+
+---
+
+### Sets
+
+A **set** holds unique values with no duplicates and supports fast membership testing with `in`. It is used here to efficiently check whether the current user has watched a given film.
+
+**Example — `watched_ids` set passed to the home page (`index` route, line 221):**
+
+```python
+# app.py
+watched_ids = {w.movie_id for w in WatchedMovie.query.filter_by(user_id=current_user.id).all()}
+#              ↑ set comprehension — produces a set of integer movie IDs
+return render_template('index.html', watched_ids=watched_ids, ...)
+```
+
+```html
+<!-- index.html -->
+<div class="poster-card {% if movie.id in watched_ids %}is-watched{% endif %}">
+```
+
+Using a set rather than a list means the `in` check runs in constant time regardless of how many films the user has watched — a list would slow down as the watched list grows.
+
+---
+
+### Individual values
+
+Single values (integers, strings, booleans) are passed the same way and accessed directly in the template by name.
+
+**Example — stats passed to the about page (`about` route, line 610):**
+
+```python
+# app.py
+return render_template('about.html',
+    total_reviews=Review.query.count(),    # integer
+    total_users=User.query.count(),        # integer
+    total_watched=WatchedMovie.query.count()  # integer
+)
+```
+
+```html
+<!-- about.html -->
+<span class="stat-number">{{ total_reviews }}</span>
+```
+
+---
+
 ## Jinja2 — Loops and Conditionals
 
 ### Why Jinja2?
@@ -282,6 +455,343 @@ If no reviews exist for a film, instead of showing a blank space the page displa
 <div class="poster-card {% if movie.id in watched_ids %}is-watched{% endif %}">
 ```
 `watched_ids` is a set of movie IDs the logged-in user has marked as watched, passed in from `app.py`. If the current movie's ID is in that set, the `is-watched` CSS class is added to the card, which applies the green border and dimmed poster styling.
+
+---
+
+## POST Forms and Server-Side Validation
+
+### How POST forms work
+
+HTML forms can send data in two ways — `GET` (data appended to the URL) or `POST` (data sent in the request body, hidden from the URL). POST is used for any action that changes data on the server: submitting a review, creating an account, or logging in.
+
+```html
+<form method="POST" action="{{ url_for('add_review') }}">
+```
+
+The `action` attribute tells the browser which URL to send the data to. Using `url_for()` rather than a hard-coded path means the URL is always correct even if routes are renamed.
+
+---
+
+### The route handles both GET and POST
+
+A single Flask route handles both requests by declaring `methods=['GET', 'POST']` and branching on `request.method`:
+
+```python
+# app.py — add_review route (line 307)
+@app.route('/add-review', methods=['GET', 'POST'])
+def add_review():
+    errors = {}
+    form_data = {}
+
+    if request.method == 'POST':
+        # read what the user submitted
+        name    = request.form.get('name', '').strip()
+        comment = request.form.get('comment', '').strip()
+
+        # validate
+        if not name:
+            errors['name'] = 'Your name is required.'
+        if not comment or len(comment) < 10:
+            errors['comment'] = 'Comment must be at least 10 characters.'
+
+        if not errors:
+            # save to database and redirect
+            db.session.add(Review(name=name, comment=comment, ...))
+            db.session.commit()
+            return redirect(url_for('movie_detail', movie_id=...))
+
+        # validation failed — fall through to re-render the form
+        form_data = {'name': name, 'comment': comment}
+
+    return render_template('add_review.html', errors=errors, form_data=form_data)
+```
+
+- **GET request** — `errors` and `form_data` are both empty; the blank form is displayed.
+- **POST request, valid** — data is saved and the user is redirected (using `redirect()` prevents the browser re-submitting on refresh).
+- **POST request, invalid** — `errors` and `form_data` are passed back to the template so the form re-renders with error messages and the user's input still filled in.
+
+---
+
+### The template displays errors and preserves input
+
+Jinja2 conditionals check each field's error key and add visual feedback; the `value` attribute is repopulated from `form_data` so the user doesn't have to retype everything.
+
+```html
+<!-- add_review.html -->
+<div class="form-group {% if errors.name %}has-error{% endif %}">
+    <label for="name">Your Name</label>
+    <input type="text" id="name" name="name"
+           value="{{ form_data.get('name', '') }}"
+           placeholder="e.g. Jane Smith">
+    {% if errors.name %}
+        <span class="error-msg">{{ errors.name }}</span>
+    {% endif %}
+</div>
+```
+
+- `{% if errors.name %}has-error{% endif %}` adds the CSS class that turns the input border red.
+- `value="{{ form_data.get('name', '') }}"` repopulates the field with what the user typed.
+- `{{ errors.name }}` displays the specific message for that field.
+
+---
+
+### Forms using POST across the project
+
+| Template | Route | Purpose |
+|---|---|---|
+| `add_review.html` | `/add-review` | Submit a star rating and written review |
+| `register.html` | `/register` | Create a new user account |
+| `login.html` | `/login` | Authenticate an existing user |
+| `forgot_password.html` | `/forgot-password` | Request a password reset email |
+| `reset_password.html` | `/reset-password/<token>` | Set a new password using a reset token |
+
+---
+
+## Server-Side Validation Logic
+
+Client-side validation (JavaScript running in the browser) is a convenience — it gives the user instant feedback without a page reload. It cannot be trusted, because anyone can disable JavaScript or send a crafted HTTP request directly to the server, bypassing the browser entirely. **Server-side validation is the only kind that can be relied upon.**
+
+This project validates all input in Python before anything is saved to the database.
+
+---
+
+### Type 1 — Rules validation via a helper function
+
+Complex validation logic is extracted into a dedicated helper rather than repeated inside routes. `check_password_strength()` in `app.py` (line 123) checks the password against five rules and returns a list of any that were not met:
+
+```python
+# app.py — line 123
+def check_password_strength(password):
+    issues = []
+    if len(password) < 8:
+        issues.append('at least 8 characters')
+    if not re.search(r'[A-Z]', password):
+        issues.append('an uppercase letter')
+    if not re.search(r'[a-z]', password):
+        issues.append('a lowercase letter')
+    if not re.search(r'\d', password):
+        issues.append('a number')
+    if not re.search(r'[!@#$%^&*]', password):
+        issues.append('a special character (!@#$ etc.)')
+    return issues   # empty list means the password passed all checks
+```
+
+The register route calls it and converts any issues into a single error message:
+
+```python
+# app.py — register route (line 472)
+strength_issues = check_password_strength(password)
+if strength_issues:
+    errors['password'] = f'Password must include: {", ".join(strength_issues)}.'
+```
+
+The same function is reused identically in the `reset_password` route — the logic lives in one place and both routes stay consistent automatically.
+
+The register page also has a live JavaScript strength meter that runs the same checks in the browser as the user types. But the Python validation always runs on submission regardless — a user who disables JavaScript still gets the same server-side check.
+
+---
+
+### Type 2 — Database validation
+
+Some checks cannot be done client-side at all because the browser has no access to the database. Username and email uniqueness are validated by querying the database directly in the register route:
+
+```python
+# app.py — register route (line 459)
+if User.query.filter_by(username=username).first():
+    errors['username'] = 'That username is already taken.'
+
+if User.query.filter_by(email=email).first():
+    errors['email'] = 'An account with that email already exists.'
+```
+
+`User.query.filter_by(...).first()` returns a `User` object if a match is found, or `None` if not. The condition is truthy when a record exists, falsy when it does not — so the error is only added when a duplicate is detected.
+
+This type of validation is impossible to replicate reliably in JavaScript. Even if you added an API endpoint to check availability live, the database could change between that check and the actual submission. The server-side check at submission time is the definitive one.
+
+---
+
+### The validation flow
+
+All field errors are collected into the `errors` dictionary before any database write is attempted. The route only proceeds to save data when `errors` is empty:
+
+```python
+if errors:
+    return render_template('register.html', errors=errors, form_data=form_data)
+
+# only reached if all validation passed
+user = User(username=username, email=email)
+user.set_password(password)
+db.session.add(user)
+db.session.commit()
+```
+
+This pattern — collect all errors first, write nothing until all pass — prevents partial or invalid data from ever reaching the database.
+
+---
+
+## Code Quality
+
+### Logical file organisation
+
+The project separates responsibilities across files so each file has one clear purpose:
+
+| File | Responsibility |
+|---|---|
+| `app.py` | Flask routes, database models, validation helpers |
+| `tmdb.py` | All TMDB API calls — no route logic lives here |
+| `templates/` | HTML presentation only — no business logic |
+| `static/style.css` | All styling in one file, grouped by component |
+
+This means changes to the TMDB API only ever touch `tmdb.py`; changes to how a page looks only ever touch a template or `style.css`. Neither file needs to know anything about the other.
+
+---
+
+### Clear route definitions
+
+Routes are named to match their purpose and use typed URL parameters where appropriate:
+
+```python
+# app.py
+@app.route('/')                                        # home
+@app.route('/search')                                  # search results
+@app.route('/movie/<int:movie_id>')                    # single film
+@app.route('/toggle-watched/<int:movie_id>', methods=['POST'])  # watched toggle
+@app.route('/my-movies')                               # personal watchlist
+@app.route('/forgot-password', methods=['GET', 'POST'])
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+```
+
+`<int:movie_id>` tells Flask to accept only integers in that segment of the URL — if anything else is passed Flask returns a 400 error automatically, with no extra validation code needed. Routes that modify data are restricted to `POST` only or declare `GET` and `POST` explicitly. Protected routes use the `@login_required` decorator rather than manual session checks inside each route.
+
+---
+
+### Proper indentation
+
+All Python files use consistent **4-space indentation** throughout, following PEP 8 (the Python style standard). HTML templates use **2-space indentation** for nested elements. Formatting was applied using **Alt + Shift + F** (VS Code's Format Document command), which automatically corrects indentation, spacing, and line length across the entire file in one step — ensuring consistency that is difficult to maintain by hand.
+
+---
+
+### Meaningful variable names
+
+Variable names are chosen to say what they contain, not just their type:
+
+| Name used | What it would be if named poorly | Why the chosen name is clearer |
+|---|---|---|
+| `watched_ids` | `ids` or `data` | Makes clear it's a set of IDs specifically for watched films |
+| `strength_issues` | `result` or `errors` | Distinguishes password rule failures from form-level `errors` |
+| `captcha_question` | `q` or `question` | Clear this is the CAPTCHA string, not any other question |
+| `movie_reviews` | `reviews` | Distinguishes reviews for this specific film from reviews in general |
+| `watched_entries` | `rows` or `data` | Distinguishes the raw database records from the `watched_movies` list built from them |
+| `_get` (tmdb.py) | `request` or `fetch` | Leading underscore signals it is an internal helper not intended to be called from outside the module |
+
+---
+
+### Comments explaining non-trivial logic
+
+Every function in `app.py` and `tmdb.py` has a docstring explaining what it does and any non-obvious behaviour:
+
+```python
+# app.py — line 91
+@app.context_processor
+def inject_tmdb():
+    """Make tmdb helper functions available in every Jinja template without passing them manually."""
+
+# app.py — line 101
+def cache_movie(tmdb_id):
+    """Save basic movie info to the local database so it can be shown without calling TMDB again."""
+
+# app.py — line 153
+def verify_reset_token(token, max_age=3600):
+    """Decode a reset token and return the email, or None if the token is expired or tampered with."""
+```
+
+Inline comments are used where the reason for a line of code would not be obvious from reading it:
+
+```python
+# tmdb.py — line 5
+# Set TMDB_API_KEY as an environment variable in production
+```
+
+```html
+<!-- register.html -->
+{# Honeypot — hidden from humans, bots fill it in and get silently rejected #}
+```
+
+JavaScript functions in the templates include a single-line comment summarising what the function does and any non-obvious side effects (such as automatically hiding the suggested password after 3 seconds).
+
+---
+
+### Separation of logic and presentation
+
+Business logic and presentation are kept strictly separate:
+
+- **`tmdb.py`** wraps every TMDB API call behind a named Python function. Routes in `app.py` call `tmdb.now_playing()` or `tmdb.movie_credits()` — they never construct API URLs or parse raw JSON themselves.
+- **`app.py`** handles validation, database queries, and deciding what data to send. It never builds HTML.
+- **Templates** display the data they receive. They do not query the database, call APIs, or contain validation logic.
+
+The `context_processor` (app.py, line 91) is a practical example of this separation — it makes `poster_url`, `profile_url`, and `genre_names` available in every template automatically, so routes do not need to pass them as arguments in every `render_template()` call:
+
+```python
+@app.context_processor
+def inject_tmdb():
+    return {
+        'poster_url':   tmdb.poster_url,
+        'profile_url':  tmdb.profile_url,
+        'genre_names':  tmdb.genre_names,
+    }
+```
+
+A template can then call `{{ poster_url(movie.poster_path) }}` directly without the route knowing or caring that the template needs it.
+
+---
+
+## Testing the Application
+
+### Local testing
+
+During development, Flask runs a built-in development server on your own machine. Starting the app with:
+
+```bash
+cd flask_app
+flask run
+```
+
+produces output like:
+
+```
+* Running on http://127.0.0.1:5000
+```
+
+`127.0.0.1` is the loopback address — it refers to your own machine and is not accessible to anyone else. `:5000` is Flask's default port. The same address is also reachable as `http://localhost:5000`. Opening either in a browser loads the running application.
+
+---
+
+### Production testing
+
+The application is deployed on [Render](https://render.com) and accessible at:
+
+**`https://cinereview-jik9.onrender.com`**
+
+This runs through Gunicorn (a production-grade web server) rather than Flask's development server, and connects to a PostgreSQL database rather than the local SQLite file. Testing the live URL verifies that the deployment configuration, environment variables, and database connection all work correctly in production.
+
+---
+
+### Routes tested
+
+Every route was tested in both environments to confirm correct behaviour:
+
+| URL | What was verified |
+|---|---|
+| `http://localhost:5000/` | Home page loads, category tabs switch between Now Playing / Popular / Top Rated / Upcoming |
+| `/search?q=inception` | Search results display correctly; empty search shows no results gracefully |
+| `/movie/<id>` | Film detail page shows poster, cast, TMDB rating, and any stored reviews |
+| `/add-review?movie_id=<id>` | Form displays for logged-in users; validation errors shown without losing entered data |
+| `/my-movies` | Watched list shows for logged-in user; redirects to login if not authenticated |
+| `/register` | Registration form validates all fields; duplicate username/email rejected; password strength meter active |
+| `/login` | Correct credentials log the user in; incorrect credentials show an error without revealing which field was wrong |
+| `/forgot-password` | Submitting a known email sends a reset link; unknown email shows the same success message (to avoid leaking account existence) |
+| `/about` | Stats (total reviews, users, watched count) display correctly |
+| `/any-invalid-url` | Custom 404 page is shown rather than Flask's default error page |
 
 ---
 

@@ -3,7 +3,7 @@ import os
 import requests
 
 # Set TMDB_API_KEY as an environment variable in production
-API_KEY = os.environ.get('TMDB_API_KEY', '370fd8222c137f1a48a5cf04d2bc9a70')
+API_KEY = os.environ.get('TMDB_API_KEY')
 
 BASE_URL = 'https://api.themoviedb.org/3'
 IMAGE_BASE = 'https://image.tmdb.org/t/p'
