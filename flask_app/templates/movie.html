@@ -114,6 +114,7 @@
 </section>
 
 <script>
+// POSTs to the server to flip the watched status, then updates the button label and style without a page reload
 function toggleWatched(btn) {
     const movieId = btn.dataset.movieId;
     btn.disabled = true;

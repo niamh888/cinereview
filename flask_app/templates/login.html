@@ -54,9 +54,11 @@
 </div>
 
 <script>
+    // Switches the named input between password (hidden) and text (visible)
     function toggleVisibility(fieldId) {
         const f = document.getElementById(fieldId);
         f.type = f.type === 'password' ? 'text' : 'password';
     }
 </script>
-{% endblock %}
+{% endblock %} 
+// End of login.html Jinja template needs to know the form field names and error keys used in the login route handler to display validation errors correctly.

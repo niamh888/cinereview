@@ -82,6 +82,7 @@
 </div>
 
 <script>
+// Hides watched films from the poster grid when the filter is active, and updates the status count
 function toggleFilter() {
     const btn    = document.getElementById('filter-btn');
     const status = document.getElementById('filter-status');
@@ -104,6 +105,7 @@ function toggleFilter() {
     status.textContent = active ? `${cards.length - hidden} films shown` : '';
 }
 
+// Fetches personalised movie suggestions from the server and renders them as clickable cards
 function loadSuggestions() {
     const btn = document.getElementById('suggest-btn');
     btn.textContent = 'Loading...';
@@ -135,6 +137,7 @@ function loadSuggestions() {
         });
 }
 
+// Hides the suggestions panel and resets the button label
 function dismissSuggestions() {
     document.getElementById('suggestions-panel').classList.add('hidden');
     document.getElementById('suggest-btn').textContent = '&#9733; Suggest a Movie for Me';

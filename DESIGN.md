@@ -302,6 +302,6 @@ Checklist of the UCD Professional Academy Flask assignment requirements and how 
 | Jinja2 loops and conditionals | ✅ | Used throughout all templates |
 | At least one POST form with validation | ✅ | Register, login, add review, password reset |
 | Server-side processing and validation logic | ✅ | Full validation in multiple routes |
-| Comments explaining non-trivial logic | ✅ | Docstrings on all functions in `app.py` and `tmdb.py` |
+| Comments explaining non-trivial logic | ✅ | Docstrings on all functions in `app.py` and `tmdb.py`; single-line comments on all JavaScript functions in templates |
 | Separation of logic and presentation | ✅ | Logic in `app.py`/`tmdb.py`, presentation in templates |
 | Deployed on Render | ✅ | `Procfile` configured for Gunicorn |

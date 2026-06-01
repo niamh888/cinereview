@@ -84,6 +84,25 @@ Jinja2's `{# #}` is preferred over HTML `<!-- -->` inside templates because it n
 
 ---
 
+## Screenshots
+
+### Home Page — Browse by Category
+![Home page showing movie poster grid](images/CineReview1.png)
+
+### Write a Review
+![Write a review form](images/CineReview2.png)
+
+### About Page
+![About CineReview page with site stats](images/CineReview3.png)
+
+### Log In
+![Log in page](images/CineReview4.png)
+
+### Create an Account
+![Registration page with password strength meter](images/CineReview5.png)
+
+---
+
 ## Running Locally
 
 1. **Clone the repo and create a virtual environment:**
