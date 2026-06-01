@@ -132,31 +132,66 @@ Jinja2's `{# #}` is preferred over HTML `<!-- -->` inside templates because it n
 
 ---
 
-## Dependencies
+## Tech Stack
+
+### Hosting & Infrastructure
+
+| Tool | Role |
+|---|---|
+| [Render](https://render.com) | Hosts the Flask app as a Web Service |
+| [Render PostgreSQL](https://render.com/docs/databases) | Production database |
+| [GitHub](https://github.com/niamh888/cinereview) | Source control — Render deploys automatically on every push to `main` |
+| [TMDB API](https://www.themoviedb.org/) | Movie data, posters, cast, and ratings |
+
+### Python Dependencies
 
 | Package | Purpose |
-|---------|---------|
+|---|---|
 | Flask | Web framework |
 | Flask-SQLAlchemy | Database ORM (SQLite locally, PostgreSQL in production) |
 | Flask-Login | User session management |
 | Flask-Mail | Sending password reset emails |
 | requests | Making HTTP calls to the TMDB API |
-| gunicorn | Production web server (used on Render) |
+| gunicorn | Production web server |
 | psycopg2-binary | PostgreSQL driver for production |
 
 ---
 
 ## Deployment
 
-The app is configured to deploy on [Render](https://render.com). The `Procfile` tells Render to start the app with:
+The app is deployed and running live at:
+
+**[https://cinereview-jik9.onrender.com](https://cinereview-jik9.onrender.com)**
+
+It is hosted on [Render](https://render.com) as a **Web Service** (not a static site — the app requires a running Python server and a PostgreSQL database).
+
+### Render configuration
+
+| Setting | Value |
+|---|---|
+| Service type | Web Service |
+| Root directory | `flask_app` |
+| Build command | `pip install -r requirements.txt` |
+| Start command | `gunicorn app:app` |
+
+The `Procfile` inside `flask_app/` defines the start command:
 
 ```
 web: gunicorn app:app
 ```
 
-Set the following environment variables in your Render dashboard:
-- `SECRET_KEY`
-- `TMDB_API_KEY`
-- `DATABASE_URL` (provided automatically by Render's PostgreSQL add-on)
-- `MAIL_USERNAME` and `MAIL_PASSWORD` (optional — for password reset emails)
-# cinereview
+### Environment variables
+
+Set the following in the Render dashboard under the web service's **Environment** tab:
+
+| Variable | Purpose |
+|---|---|
+| `SECRET_KEY` | Signs session cookies and password reset tokens |
+| `TMDB_API_KEY` | Authenticates requests to the TMDB movie API |
+| `DATABASE_URL` | Set automatically when a Render PostgreSQL database is linked |
+| `MAIL_USERNAME` | Gmail address for sending password reset emails (optional) |
+| `MAIL_PASSWORD` | Gmail app password (optional) |
+
+### Database
+
+A PostgreSQL database is provisioned separately on Render and linked to the web service via the `DATABASE_URL` environment variable. The app detects this variable at startup and switches from SQLite (local development) to PostgreSQL (production) automatically — no code changes required between environments.

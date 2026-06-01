@@ -745,6 +745,55 @@ A template can then call `{{ poster_url(movie.poster_path) }}` directly without 
 
 ---
 
+## Deployment
+
+The application is deployed live at **[https://cinereview-jik9.onrender.com](https://cinereview-jik9.onrender.com)**.
+
+### Platform — Render Web Service
+
+Render was chosen as the hosting platform because it natively supports Python/Flask applications, offers a free tier suitable for a portfolio project, and connects directly to a GitHub repository so every push to `main` triggers an automatic redeploy.
+
+This project is deployed as a **Web Service** — not a Static Site. A static site serves fixed HTML/CSS/JS files with no server logic. CineReview requires a running Python server (to handle routes, validate forms, and query the database) and a PostgreSQL database (to persist users, reviews, and watched films), so a Web Service is the correct deployment type.
+
+### Render configuration
+
+| Setting | Value | Why |
+|---|---|---|
+| Root directory | `flask_app` | The `Procfile` and `requirements.txt` live inside this subfolder, not the repo root |
+| Build command | `pip install -r requirements.txt` | Installs all Python dependencies on each deploy |
+| Start command | `gunicorn app:app` | Starts the app using Gunicorn, a production-grade WSGI server |
+
+Gunicorn replaces Flask's built-in development server in production. Flask's dev server is single-threaded and not designed to handle real traffic — Gunicorn can handle multiple concurrent requests safely.
+
+### Database
+
+A PostgreSQL database is provisioned separately on Render and linked to the web service via the `DATABASE_URL` environment variable. The app handles the switch automatically in `app.py`:
+
+```python
+_db_url = os.environ.get('DATABASE_URL', 'sqlite:///cinereview.db')
+if _db_url.startswith('postgres://'):
+    _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+```
+
+- **Locally** — no `DATABASE_URL` is set, so the app falls back to a local SQLite file
+- **On Render** — `DATABASE_URL` is set automatically when the PostgreSQL service is linked, switching the app to PostgreSQL with no code changes
+
+The `postgres://` → `postgresql://` replacement is needed because Render provides the older URL prefix but SQLAlchemy requires the newer one.
+
+### Environment variables
+
+Sensitive values are never stored in the code — they are set as environment variables in the Render dashboard:
+
+| Variable | Purpose |
+|---|---|
+| `SECRET_KEY` | Signs session cookies and password reset tokens |
+| `TMDB_API_KEY` | Authenticates requests to the TMDB API |
+| `DATABASE_URL` | Set automatically by Render when the PostgreSQL database is linked |
+| `MAIL_USERNAME` | Gmail address for sending password reset emails (optional) |
+| `MAIL_PASSWORD` | Gmail app password (optional) |
+
+---
+
 ## Testing the Application
 
 ### Local testing
