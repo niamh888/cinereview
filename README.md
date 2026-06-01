@@ -140,3 +140,4 @@ Set the following environment variables in your Render dashboard:
 - `TMDB_API_KEY`
 - `DATABASE_URL` (provided automatically by Render's PostgreSQL add-on)
 - `MAIL_USERNAME` and `MAIL_PASSWORD` (optional — for password reset emails)
+# cinereview
