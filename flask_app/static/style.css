@@ -212,6 +212,25 @@ a:hover { text-decoration: underline; }
 .suggestion-info { padding: 0.75rem 0.75rem 0.75rem 0; display: flex; flex-direction: column; gap: 0.4rem; justify-content: center; }
 .suggestion-title { font-weight: 600; color: #0f172a; font-size: 0.9rem; }
 .suggestion-meta { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.suggestions-empty { color: #94a3b8; font-size: 0.9rem; font-style: italic; padding: 0.5rem 0; }
+
+.genre-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.85rem; }
+
+.genre-filter-btn {
+    padding: 0.25rem 0.65rem;
+    border-radius: 20px;
+    border: 1px solid #c7d2fe;
+    background: #fff;
+    color: #475569;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.genre-filter-btn:hover { border-color: #4f6ef7; color: #4f6ef7; }
+.genre-filter-btn.active { background: #4f6ef7; color: #fff; border-color: #4f6ef7; }
+
+.suggestions-footer { margin-top: 0.85rem; text-align: center; }
 
 /* ---- Filter Bar ---- */
 .filter-bar {

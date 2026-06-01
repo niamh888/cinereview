@@ -134,6 +134,23 @@ Jinja2's `{# #}` is preferred over HTML `<!-- -->` inside templates because it n
 
    The database tables are created automatically on first startup — no migration commands needed.
 
+5. **Enable debug mode (optional but recommended during development):**
+   ```bash
+   flask --debug run
+   ```
+   Or set the environment variable before running:
+   ```bash
+   $env:FLASK_DEBUG = "1"   # PowerShell
+   flask run
+   ```
+
+   Debug mode enables:
+   - **Auto-reloader** — Flask restarts automatically whenever you save a `.py` file
+   - **Interactive debugger** — exceptions show a full traceback in the browser with a console to inspect variables
+   - **Detailed error pages** — instead of a generic 500 page you see exactly what went wrong and where
+
+   > **Never enable debug mode in production.** The interactive debugger allows arbitrary Python code to be executed in the browser. Render runs Gunicorn rather than Flask's dev server, so debug mode does not apply there regardless.
+
 ---
 
 ## Tech Stack

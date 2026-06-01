@@ -13,6 +13,188 @@ A reference document describing the visual design, colour palette, layout, and c
 
 ---
 
+## Framework Choice — Flask vs Django
+
+CineReview is built with **Flask**, a lightweight Python web framework. Python offers several web frameworks; the two most common are Flask and Django.
+
+| | Flask | Django |
+|---|---|---|
+| **Philosophy** | "Micro" — bring your own pieces | "Batteries included" — everything built in |
+| **ORM** | You choose (e.g. SQLAlchemy) | Built-in Django ORM |
+| **Auth** | You add it (e.g. Flask-Login) | Built-in |
+| **Admin panel** | You build it | Auto-generated |
+| **Project structure** | Flexible, you decide | Opinionated, enforced |
+
+### Why Flask was chosen for this project
+
+- **Appropriate scale** — CineReview is a medium-small application. Flask adds only what is needed and avoids the overhead of Django's full stack for a project of this size.
+- **Transparency** — Flask makes it easy to see exactly what is happening at each step (routing, template rendering, database access). This is valuable for a learning project where understanding the mechanics matters.
+- **Flexibility** — the database layer (SQLAlchemy + PostgreSQL), authentication (Flask-Login), and email (Flask-Mail) were each chosen and wired up deliberately, rather than inherited from a framework's defaults.
+- **REST API suitability** — CineReview consumes the TMDB external API; Flask is well suited to applications that bridge an external API and a database without needing Django's full model-admin-auth machinery.
+
+Django would be the better choice for a larger team project where built-in conventions reduce friction, or where the auto-generated admin panel and built-in auth would save significant time. For a focused solo project with custom requirements, Flask's simplicity is the right fit.
+
+---
+
+## Flask Routing
+
+Flask routing maps a URL to a Python function using the `@app.route()` decorator. When a browser requests a URL, Flask looks it up in an internal table of URL → function pairs and calls the matching function.
+
+### URL parameters
+
+Parts of the URL can be captured and passed as function arguments using converters:
+
+```python
+@app.route('/movie/<int:movie_id>')
+def movie_detail(movie_id):
+    ...
+```
+
+`<int:movie_id>` tells Flask to extract that segment, convert it to an integer, and pass it as `movie_id`. If anything other than an integer appears there Flask returns a 400 error automatically — no extra validation needed.
+
+### HTTP methods
+
+By default a route only accepts GET requests. POST (and others) must be declared explicitly:
+
+```python
+@app.route('/add-review', methods=['GET', 'POST'])
+def add_review():
+    if request.method == 'POST':
+        ...  # handle form submission
+    return render_template('add_review.html')
+```
+
+A single function handles both requests by branching on `request.method` — this is the pattern used for every form route in this project.
+
+### `url_for()` — reverse lookup
+
+Instead of hard-coding a URL like `/movie/123` in templates or redirects, `url_for()` generates the correct URL from the function name:
+
+```python
+url_for('movie_detail', movie_id=123)   # → '/movie/123'
+```
+
+If a route is ever renamed or restructured, only the decorator changes — every template and redirect using `url_for()` updates automatically.
+
+### Routes in this project
+
+This project registers 11 routes in `app.py`:
+
+| URL | Function | Methods |
+|---|---|---|
+| `/` | `index` | GET |
+| `/search` | `search` | GET |
+| `/movie/<int:movie_id>` | `movie_detail` | GET |
+| `/add-review` | `add_review` | GET, POST |
+| `/toggle-watched/<int:movie_id>` | `toggle_watched` | POST |
+| `/my-movies` | `my_movies` | GET |
+| `/register` | `register` | GET, POST |
+| `/login` | `login` | GET, POST |
+| `/logout` | `logout` | GET |
+| `/forgot-password` | `forgot_password` | GET, POST |
+| `/reset-password/<token>` | `reset_password` | GET, POST |
+| `/about` | `about` | GET |
+
+Routes that require a logged-in user are protected with the `@login_required` decorator, which stacks on top of `@app.route()`. Flask processes decorators from the inside out — the route is registered first, then the login check wraps it.
+
+---
+
+## `render_template()`
+
+`render_template()` is the Flask function that connects a route to an HTML file. When a route is ready to send a response, it calls `render_template()` with a template filename and any data the template needs:
+
+```python
+return render_template('index.html', movies=movies, categories=CATEGORIES)
+```
+
+Flask then:
+1. Finds the file in the `templates/` folder
+2. Passes the keyword arguments in as Jinja2 variables
+3. Processes any Jinja2 tags (`{% for %}`, `{% if %}`, `{{ }}`)
+4. Returns the fully built HTML string to the browser
+
+Without it, a route would have to return raw HTML strings from Python — messy and unmaintainable. `render_template()` is what enforces the separation between logic (Python) and presentation (HTML templates).
+
+### Example from this project
+
+The movie detail route passes four variables to its template:
+
+```python
+return render_template('movie_detail.html',
+    movie=movie,
+    cast=cast,
+    reviews=reviews,
+    watched=watched
+)
+```
+
+The template receives `movie`, `cast`, `reviews`, and `watched` as variables and decides how to display them. The route never touches HTML; the template never touches the database.
+
+---
+
+## Default Flask Folders
+
+Flask expects three specific folders by default, each with a distinct purpose.
+
+### `templates/`
+Holds all HTML files. When you call `render_template('index.html')`, Flask looks here automatically — no path needs to be specified. Jinja2 processes the files in this folder before they are sent to the browser.
+
+### `static/`
+Holds files that are served exactly as-is with no processing. This includes CSS, JavaScript, images, and fonts. In templates these are referenced using `url_for('static', filename='style.css')` rather than a hard-coded path, so Flask generates the correct URL regardless of where the app is deployed.
+
+### `instance/`
+Holds configuration or files specific to a particular deployment that should not be committed to version control — for example a local SQLite database file or a config file containing secret keys. Flask creates this automatically in some setups.
+
+### In this project
+
+| Folder | Contents |
+|---|---|
+| `templates/` | 11 HTML templates including `base.html` and all page templates |
+| `static/` | `style.css` — all site styling in one file |
+| `instance/` | Local SQLite DB used during development (production uses PostgreSQL on Render) |
+
+All three sit inside `flask_app/` since that is the root directory declared in the Render configuration.
+
+---
+
+## Variable Segments in Routes
+
+`<name>` in a route is a **variable segment** — it captures whatever appears at that position in the URL and passes it as an argument to the route function:
+
+```python
+@app.route('/movie/<movie_id>')
+def movie_detail(movie_id):
+    ...
+```
+
+A request to `/movie/550` calls `movie_detail(movie_id='550')`.
+
+### Converters
+
+By default the captured value is a string. A converter can be added to change the type and restrict what Flask will match:
+
+| Syntax | Type | Rejects |
+|---|---|---|
+| `<name>` | string | anything containing a `/` |
+| `<int:name>` | integer | non-numeric values |
+| `<float:name>` | float | non-numeric values |
+| `<path:name>` | string | nothing — allows `/` in the value |
+
+If the URL doesn't match the converter type, Flask returns a 404 automatically — no extra validation is needed in the route function.
+
+### In this project
+
+Two routes use `<int:movie_id>`:
+
+```python
+@app.route('/movie/<int:movie_id>')
+@app.route('/toggle-watched/<int:movie_id>', methods=['POST'])
+```
+
+The `int:` converter means `/movie/abc` or `/movie/3.5` will never reach the function — Flask rejects them before any code runs. It also means `movie_id` arrives already typed as an integer, ready to use in a database query or API call without any manual conversion.
+
+---
+
 ## Colour Palette
 
 ### Backgrounds

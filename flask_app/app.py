@@ -218,8 +218,10 @@ def index():
             w.movie_id for w in WatchedMovie.query.filter_by(user_id=current_user.id).all()
         }
 
+    genres = sorted(tmdb.GENRE_MAP.items(), key=lambda x: x[1])
     return render_template('index.html', movies=movies, category=category,
-                           categories=CATEGORIES, watched_ids=watched_ids, error=error)
+                           categories=CATEGORIES, watched_ids=watched_ids,
+                           error=error, genres=genres)
 
 
 @app.route('/search')
@@ -383,22 +385,35 @@ def add_review():
 
 @app.route('/suggestions')
 def suggestions():
-    """Return up to 4 movie suggestions as JSON — similar to the last watched film, or trending if none."""
+    """Return up to 4 movie suggestions as JSON — filtered by genre and page if provided."""
     try:
+        page = request.args.get('page', 1, type=int)
+        genre_id = request.args.get('genre_id', None, type=int)
+
+        watched_ids = set()
         if current_user.is_authenticated:
+            watched_ids = {
+                w.movie_id for w in WatchedMovie.query.filter_by(user_id=current_user.id).all()
+            }
+
+        if genre_id:
+            picks = tmdb.discover_by_genre(genre_id, page)
+            reason = f'Popular {tmdb.GENRE_MAP.get(genre_id, "genre")} films'
+        elif current_user.is_authenticated:
             last = WatchedMovie.query.filter_by(
                 user_id=current_user.id
             ).order_by(WatchedMovie.watched_at.desc()).first()
-
             if last:
-                picks = tmdb.similar(last.movie_id)
+                picks = tmdb.similar(last.movie_id, page)
                 reason = 'Because of films you have watched'
             else:
-                picks = tmdb.trending()
+                picks = tmdb.trending(page)
                 reason = 'Trending this week'
         else:
-            picks = tmdb.trending()
+            picks = tmdb.trending(page)
             reason = 'Trending this week'
+
+        filtered = [m for m in picks if m['id'] not in watched_ids]
 
         results = [
             {
@@ -410,7 +425,7 @@ def suggestions():
                 'rating': round(m.get('vote_average', 0), 1),
                 'poster': tmdb.poster_url(m.get('poster_path'), 'w200'),
             }
-            for m in picks[:4]
+            for m in filtered[:4]
         ]
         return jsonify({'suggestions': results, 'reason': reason})
     except Exception:

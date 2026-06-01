@@ -65,9 +65,14 @@ def upcoming():
     return _get('/movie/upcoming')['results']
 
 
-def trending():
+def trending(page=1):
     """Return movies that are trending across TMDB this week."""
-    return _get('/trending/movie/week')['results']
+    return _get('/trending/movie/week', page=page)['results']
+
+
+def discover_by_genre(genre_id, page=1):
+    """Return popular movies filtered by a TMDB genre ID."""
+    return _get('/discover/movie', with_genres=genre_id, sort_by='popularity.desc', page=page)['results']
 
 
 def search_movies(query):
@@ -91,6 +96,6 @@ def movie_credits(tmdb_id):
     return cast, director
 
 
-def similar(tmdb_id):
-    """Return up to 6 movies similar to the given movie, used for suggestions."""
-    return _get(f'/movie/{tmdb_id}/similar')['results'][:6]
+def similar(tmdb_id, page=1):
+    """Return movies similar to the given movie, used for suggestions."""
+    return _get(f'/movie/{tmdb_id}/similar', page=page)['results']
