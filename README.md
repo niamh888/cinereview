@@ -117,10 +117,12 @@ Jinja2's `{# #}` is preferred over HTML `<!-- -->` inside templates because it n
    pip install -r flask_app/requirements.txt
    ```
 
-3. **Set environment variables** (or create a `.env` file):
+3. **Set environment variables** — copy `.env.example` to `.env` and fill in your values:
    ```
    TMDB_API_KEY=your_tmdb_api_key
    SECRET_KEY=any_random_secret_string
+   MAIL_USERNAME=your_gmail_address      # optional — only needed for password reset emails
+   MAIL_PASSWORD=your_gmail_app_password # optional — only needed for password reset emails
    ```
 
 4. **Run the app:**
@@ -129,6 +131,8 @@ Jinja2's `{# #}` is preferred over HTML `<!-- -->` inside templates because it n
    flask run
    ```
    Then open `http://localhost:5000` in your browser.
+
+   The database tables are created automatically on first startup — no migration commands needed.
 
 ---
 
@@ -163,6 +167,8 @@ The app is deployed and running live at:
 
 **[https://cinereview-jik9.onrender.com](https://cinereview-jik9.onrender.com)**
 
+> **Note:** hosted on Render's free tier — if the service has been idle, the first load may take up to 60 seconds to wake up. Subsequent pages load normally.
+
 It is hosted on [Render](https://render.com) as a **Web Service** (not a static site — the app requires a running Python server and a PostgreSQL database).
 
 ### Render configuration
@@ -191,6 +197,8 @@ Set the following in the Render dashboard under the web service's **Environment*
 | `DATABASE_URL` | Set automatically when a Render PostgreSQL database is linked |
 | `MAIL_USERNAME` | Gmail address for sending password reset emails (optional) |
 | `MAIL_PASSWORD` | Gmail app password (optional) |
+
+![Render environment variables dashboard showing the five required keys](images/envVariables.png)
 
 ### Database
 
