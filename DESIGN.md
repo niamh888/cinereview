@@ -282,6 +282,40 @@ The `int:` converter means `/movie/abc` or `/movie/3.5` will never reach the fun
 
 ---
 
+## Responsive Design
+
+All responsive behaviour is handled with three `@media` breakpoints at the bottom of `style.css`. No JavaScript is used — layout changes are CSS only.
+
+### Breakpoints
+
+| Breakpoint | Targets |
+|---|---|
+| `max-width: 768px` | Tablet and below |
+| `max-width: 640px` | Phone |
+| `max-width: 480px` | Small phone |
+
+### 768px — Tablet
+
+- **Movie detail hero** — switches from a two-column grid (`260px 1fr`) to a single column; poster centres at `200px` wide above the film info
+- **About stats grid** — drops from 3 columns to 2
+
+### 640px — Phone
+
+- **Navbar** — wraps to two rows: brand + nav links on the first row, search bar full-width on the second row
+- **Main content padding** — reduced from `2rem 1.5rem` to `1rem`
+- **Page heading** — font size reduced from `1.9rem` to `1.5rem`
+- **Suggestion cards** — stack to full width instead of sitting side by side
+
+### 480px — Small Phone
+
+- **Poster grid** — forced to exactly 2 columns regardless of screen width
+- **About stats grid** — drops to a single column
+- **Navbar** — username hidden to free up space; "Write a Review" link hidden (accessible via movie detail and poster card)
+- **Page heading** — font size reduced further to `1.3rem`
+- **Review cards** — reviewer name and star rating stack vertically instead of side by side
+
+---
+
 ## Components
 
 ### Navbar
