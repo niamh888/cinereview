@@ -4,6 +4,14 @@ A Flask web application for discovering movies and writing reviews. Movie data i
 
 ---
 
+## The Idea
+
+This project came from a very relatable problem — my husband and I could never remember which movies we had already watched together. We'd settle in, start a film, and about 10 minutes in one of us would say *"we've watched this"* or *"this is familiar..."*.
+
+CineReview was built to solve exactly that: a simple way to log the movies you've watched so you never have to sit through the first 10 minutes of a film you've already seen.
+
+---
+
 ## Features
 
 - Browse movies by category: Now Playing, Popular, Top Rated, Upcoming

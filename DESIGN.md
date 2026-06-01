@@ -177,3 +177,131 @@ A reference document describing the visual design, colour palette, layout, and c
 | Border radius — medium | `8–10px` (cards, review cards) |
 | Border radius — large | `12–14px` (hero, about cards) |
 | Border radius — pill | `20px` (tabs, badges) |
+
+---
+
+## Jinja2 — Loops and Conditionals
+
+### Why Jinja2?
+
+Jinja2 is Flask's built-in templating engine. It lets you embed Python-like logic directly inside HTML files, so pages can display different content depending on what data the server sends. Without it, every page would need to be written as static HTML — you couldn't show a list of movies, display a user's name, or hide a button for logged-out users without writing separate pages for every possible state.
+
+The key principle is **separation of concerns**: Python in `app.py` handles the logic and fetches the data; Jinja2 in the templates handles how that data is displayed. Neither side needs to know the details of the other.
+
+---
+
+### Loops
+
+A Jinja2 loop works like a Python `for` loop — it repeats a block of HTML for every item in a list or dictionary.
+
+**Example 1 — Rendering the category tabs from a Python dictionary:**
+```html
+{% for key, label in categories.items() %}
+    <a href="{{ url_for('index', category=key) }}"
+       class="tab {% if category == key %}active{% endif %}">
+        {{ label }}
+    </a>
+{% endfor %}
+```
+`categories` is a Python dictionary defined in `app.py`. Jinja2 loops through each key/label pair and renders a tab link for each one. Without this loop, each tab would have to be hard-coded in the HTML — adding or renaming a category would mean editing both the Python and the HTML.
+
+---
+
+**Example 2 — Rendering the movie poster grid:**
+```html
+{% for movie in movies %}
+<div class="poster-card">
+    <h2>{{ movie.title }}</h2>
+    <span class="year">{{ movie.release_date[:4] if movie.release_date else '—' }}</span>
+</div>
+{% endfor %}
+```
+`movies` is a list returned from the TMDB API in `app.py`. Jinja2 renders one card for every film in the list. The inline conditional (`if movie.release_date else '—'`) handles the case where a film has no release date, displaying a dash instead of crashing.
+
+---
+
+**Example 3 — Rendering star ratings:**
+```html
+{% for i in range(1, 6) %}
+    <span class="star {% if i <= review.rating %}filled{% endif %}">★</span>
+{% endfor %}
+```
+This loops five times (1 through 5) and adds the `filled` CSS class (which colours the star amber) to any star whose number is less than or equal to the review's rating. A rating of 3 produces three filled stars and two empty ones.
+
+---
+
+### Conditionals
+
+A Jinja2 conditional works like a Python `if` statement — it shows or hides blocks of HTML based on a condition.
+
+**Example 1 — Showing different content to logged-in vs. logged-out users:**
+```html
+{% if current_user.is_authenticated %}
+    <a href="{{ url_for('my_movies') }}">My Movies</a>
+    <span>{{ current_user.username }}</span>
+    <a href="{{ url_for('logout') }}">Log out</a>
+{% else %}
+    <a href="{{ url_for('login') }}">Log in</a>
+    <a href="{{ url_for('register') }}">Register</a>
+{% endif %}
+```
+The navbar changes entirely depending on whether the user is logged in. Flask-Login provides `current_user` and Jinja2 uses it to decide which links to render.
+
+---
+
+**Example 2 — Handling a missing movie poster:**
+```html
+{% if movie.poster_path %}
+    <img src="{{ poster_url(movie.poster_path) }}" alt="{{ movie.title }}">
+{% else %}
+    <div class="no-poster">{{ movie.title }}</div>
+{% endif %}
+```
+Not every film in TMDB has a poster image. This conditional checks whether one exists and either shows the image or falls back to a styled placeholder showing the film's title.
+
+---
+
+**Example 3 — Showing an empty state when there are no reviews:**
+```html
+{% if reviews %}
+    {% for review in reviews %}
+        <div class="review-card">...</div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <p>No reviews yet for this film.</p>
+    </div>
+{% endif %}
+```
+If no reviews exist for a film, instead of showing a blank space the page displays a helpful message. The `if reviews` check is true when the list has at least one item, and false when it is empty.
+
+---
+
+**Example 4 — Marking watched movies on the home page:**
+```html
+<div class="poster-card {% if movie.id in watched_ids %}is-watched{% endif %}">
+```
+`watched_ids` is a set of movie IDs the logged-in user has marked as watched, passed in from `app.py`. If the current movie's ID is in that set, the `is-watched` CSS class is added to the card, which applies the green border and dimmed poster styling.
+
+---
+
+## Assignment Technical Requirements
+
+Checklist of the UCD Professional Academy Flask assignment requirements and how this project meets them.
+
+| Requirement | Status | Notes |
+|-------------|--------|-------|
+| Flask environment + virtual environment | ✅ | `.venv` set up, `requirements.txt` present |
+| `app.py` with defined routes | ✅ | 11 clearly defined routes |
+| Project structure | ✅ | Follows required layout (CSS is at `static/style.css`) |
+| 5+ HTML templates | ✅ | 11 templates including `base.html` |
+| Template inheritance via `base.html` | ✅ | All pages use `{% extends "base.html" %}` |
+| Navigation across all pages | ✅ | Persistent navbar present on every page |
+| Modern CSS styling | ✅ | Comprehensive, professional styling in `style.css` |
+| Python data structures passed to templates | ✅ | Movies list, reviews, categories dict, stats |
+| Jinja2 loops and conditionals | ✅ | Used throughout all templates |
+| At least one POST form with validation | ✅ | Register, login, add review, password reset |
+| Server-side processing and validation logic | ✅ | Full validation in multiple routes |
+| Comments explaining non-trivial logic | ✅ | Docstrings on all functions in `app.py` and `tmdb.py` |
+| Separation of logic and presentation | ✅ | Logic in `app.py`/`tmdb.py`, presentation in templates |
+| Deployed on Render | ✅ | `Procfile` configured for Gunicorn |
