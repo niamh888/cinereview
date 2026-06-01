@@ -273,13 +273,17 @@ def movie_detail(movie_id):
     ).order_by(Review.created_at.desc()).all()
 
     watched = False
+    excluded = False
     if current_user.is_authenticated:
         watched = WatchedMovie.query.filter_by(
             user_id=current_user.id, movie_id=movie_id
         ).first() is not None
+        excluded = ExcludedMovie.query.filter_by(
+            user_id=current_user.id, movie_id=movie_id
+        ).first() is not None
 
     return render_template('movie.html', movie=film, cast=cast, director=director,
-                           reviews=movie_reviews, watched=watched)
+                           reviews=movie_reviews, watched=watched, excluded=excluded)
 
 
 @app.route('/toggle-watched/<int:movie_id>', methods=['POST'])

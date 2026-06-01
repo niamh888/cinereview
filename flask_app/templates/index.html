@@ -84,11 +84,6 @@
                    class="btn btn-secondary btn-sm">Details</a>
                 <a href="{{ url_for('add_review', movie_id=movie.id) }}"
                    class="btn btn-primary btn-sm">Review</a>
-                {% if current_user.is_authenticated %}
-                <button class="btn btn-no-thanks btn-sm"
-                        data-movie-id="{{ movie.id }}"
-                        onclick="excludeMovie(this)">No Thanks</button>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -96,15 +91,6 @@
 </div>
 
 <script>
-// POSTs to the server to mark a movie as excluded, then removes its card from the grid
-function excludeMovie(btn) {
-    const movieId = btn.dataset.movieId;
-    btn.disabled = true;
-    fetch(`/exclude-movie/${movieId}`, { method: 'POST' })
-        .then(res => res.json())
-        .then(() => btn.closest('.poster-card').remove());
-}
-
 // Hides watched films from the poster grid when the filter is active, and updates the status count
 function toggleFilter() {
     const btn    = document.getElementById('filter-btn');

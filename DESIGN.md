@@ -294,12 +294,13 @@ The `int:` converter means `/movie/abc` or `/movie/3.5` will never reach the fun
 - White card, `border-radius: 10px`, subtle shadow
 - Poster image fills top (2:3 aspect ratio), scales slightly on hover
 - **Watched state**: green border (`#86efac`), poster dimmed to 45% brightness, "Watched" overlay badge on the image
-- Card body: title, year, genre tag, TMDB rating badge, action buttons (Details / Review / No Thanks)
-- **No Thanks button**: red-tinted (`#fff1f2` background, `#991b1b` text) — marks the film as excluded, removes the card from the grid immediately, and prevents it appearing in suggestions
+- Card body: title, year, genre tag, TMDB rating badge, action buttons (Details / Review)
 
 ### Movie Detail Hero
 - Two-column grid: large poster on the left, film info on the right
 - Info includes: title, tagline, year/runtime/genres, TMDB star rating (amber star + large number), overview, director, action buttons
+- Action buttons: **Mark as Watched** (green-tinted when active), **No Thanks** (red-tinted when active, toggleable), **Write a Review**
+- **No Thanks** marks the film as excluded — hidden from the home grid and filtered out of suggestions; clicking again un-excludes it
 - White card with `border-radius: 14px`
 
 ### Suggestion Panel

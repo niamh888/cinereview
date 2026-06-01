@@ -54,6 +54,14 @@
                         {% if watched %}&#10003; Watched{% else %}Mark as Watched{% endif %}
                     </span>
                 </button>
+                <button class="btn {% if excluded %}btn-no-thanks{% else %}btn-secondary{% endif %}"
+                        id="exclude-btn"
+                        data-movie-id="{{ movie.id }}"
+                        onclick="toggleExcluded(this)">
+                    <span id="exclude-text">
+                        {% if excluded %}&#10005; Not for Me{% else %}No Thanks{% endif %}
+                    </span>
+                </button>
             {% else %}
                 <a href="{{ url_for('login') }}" class="btn btn-secondary">Log in to track watched</a>
             {% endif %}
@@ -114,6 +122,25 @@
 </section>
 
 <script>
+// POSTs to the server to toggle the excluded status, then updates the button label and style without a page reload
+function toggleExcluded(btn) {
+    const movieId = btn.dataset.movieId;
+    btn.disabled = true;
+    fetch(`/exclude-movie/${movieId}`, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            const text = document.getElementById('exclude-text');
+            if (data.excluded) {
+                text.textContent = '✕ Not for Me';
+                btn.className = btn.className.replace('btn-secondary', 'btn-no-thanks');
+            } else {
+                text.textContent = 'No Thanks';
+                btn.className = btn.className.replace('btn-no-thanks', 'btn-secondary');
+            }
+            btn.disabled = false;
+        });
+}
+
 // POSTs to the server to flip the watched status, then updates the button label and style without a page reload
 function toggleWatched(btn) {
     const movieId = btn.dataset.movieId;
