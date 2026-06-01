@@ -46,9 +46,11 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(200), nullable=False)
 
     def set_password(self, password):
+        """Hash the password and store it — never stores the plain text."""
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        """Return True if the given password matches the stored hash."""
         return check_password_hash(self.password_hash, password)
 
 
@@ -80,6 +82,7 @@ class MovieCache(db.Model):
 
 @login_manager.user_loader
 def load_user(user_id):
+    """Required by Flask-Login to reload the logged-in user from the database on each request."""
     return db.session.get(User, int(user_id))
 
 
@@ -87,6 +90,7 @@ def load_user(user_id):
 
 @app.context_processor
 def inject_tmdb():
+    """Make tmdb helper functions available in every Jinja template without passing them manually."""
     return {
         'poster_url': tmdb.poster_url,
         'profile_url': tmdb.profile_url,
@@ -95,6 +99,7 @@ def inject_tmdb():
 
 
 def cache_movie(tmdb_id):
+    """Save basic movie info to the local database so it can be shown without calling TMDB again."""
     cached = db.session.get(MovieCache, tmdb_id)
     if cached:
         return cached
@@ -116,6 +121,7 @@ def cache_movie(tmdb_id):
 
 
 def check_password_strength(password):
+    """Return a list of unmet requirements; an empty list means the password is strong enough."""
     issues = []
     if len(password) < 8:
         issues.append('at least 8 characters')
@@ -131,6 +137,7 @@ def check_password_strength(password):
 
 
 def make_captcha():
+    """Generate a simple addition question and store the answer in the session for later verification."""
     a = random.randint(2, 15)
     b = random.randint(2, 15)
     session['captcha_answer'] = a + b
@@ -138,11 +145,13 @@ def make_captcha():
 
 
 def generate_reset_token(email):
+    """Create a signed, time-limited token containing the user's email for password reset links."""
     s = URLSafeTimedSerializer(app.secret_key)
     return s.dumps(email, salt='password-reset-salt')
 
 
 def verify_reset_token(token, max_age=3600):
+    """Decode a reset token and return the email, or None if the token is expired or tampered with."""
     s = URLSafeTimedSerializer(app.secret_key)
     try:
         email = s.loads(token, salt='password-reset-salt', max_age=max_age)
@@ -152,6 +161,7 @@ def verify_reset_token(token, max_age=3600):
 
 
 def send_reset_email(user, token):
+    """Email a password reset link to the user; falls back to printing it in the console if mail fails."""
     reset_url = url_for('reset_password', token=token, _external=True)
     try:
         msg = Message(
@@ -184,6 +194,7 @@ CATEGORIES = {
 
 @app.route('/')
 def index():
+    """Home page — fetch a list of movies from TMDB for the selected category tab."""
     category = request.args.get('category', 'now_playing')
     if category not in CATEGORIES:
         category = 'now_playing'
@@ -213,6 +224,7 @@ def index():
 
 @app.route('/search')
 def search():
+    """Search TMDB for movies matching the user's query and display the results."""
     query = request.args.get('q', '').strip()
     movies = []
     error = None
@@ -235,6 +247,7 @@ def search():
 
 @app.route('/movie/<int:movie_id>')
 def movie_detail(movie_id):
+    """Fetch full movie details, cast, and stored reviews for a single film's page."""
     try:
         film = tmdb.movie_detail(movie_id)
         cast, director = tmdb.movie_credits(movie_id)
@@ -258,6 +271,7 @@ def movie_detail(movie_id):
 @app.route('/toggle-watched/<int:movie_id>', methods=['POST'])
 @login_required
 def toggle_watched(movie_id):
+    """Add or remove a movie from the current user's watched list and return the new state as JSON."""
     existing = WatchedMovie.query.filter_by(
         user_id=current_user.id, movie_id=movie_id
     ).first()
@@ -274,6 +288,7 @@ def toggle_watched(movie_id):
 @app.route('/my-movies')
 @login_required
 def my_movies():
+    """Show all movies the logged-in user has marked as watched, loading details from the local cache."""
     watched_entries = WatchedMovie.query.filter_by(
         user_id=current_user.id
     ).order_by(WatchedMovie.watched_at.desc()).all()
@@ -291,6 +306,7 @@ def my_movies():
 
 @app.route('/add-review', methods=['GET', 'POST'])
 def add_review():
+    """Display and handle the review form; validate input then save the review to the database."""
     errors = {}
     movie_id_param = request.args.get('movie_id', '').strip()
 
@@ -367,6 +383,7 @@ def add_review():
 
 @app.route('/suggestions')
 def suggestions():
+    """Return up to 4 movie suggestions as JSON — similar to the last watched film, or trending if none."""
     try:
         if current_user.is_authenticated:
             last = WatchedMovie.query.filter_by(
@@ -402,6 +419,7 @@ def suggestions():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    """Handle new account creation — validate all fields including CAPTCHA, then log the user in."""
     if current_user.is_authenticated:
         return redirect(url_for('index'))
 
@@ -474,6 +492,7 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Authenticate the user and redirect them to wherever they were trying to go."""
     if current_user.is_authenticated:
         return redirect(url_for('index'))
 
@@ -508,6 +527,7 @@ def login():
 @app.route('/logout')
 @login_required
 def logout():
+    """Clear the user's session and redirect to the home page."""
     logout_user()
     flash('You have been logged out.', 'success')
     return redirect(url_for('index'))
@@ -515,6 +535,7 @@ def logout():
 
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
+    """Accept an email address and send a reset link if an account exists (always shows success to avoid leaking emails)."""
     if current_user.is_authenticated:
         return redirect(url_for('index'))
 
@@ -541,6 +562,7 @@ def forgot_password():
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
+    """Verify the reset token then let the user set a new password; reject expired or invalid tokens."""
     if current_user.is_authenticated:
         return redirect(url_for('index'))
 
@@ -581,6 +603,7 @@ def reset_password(token):
 
 @app.route('/about')
 def about():
+    """Pass site-wide stats (review count, user count, watched count) to the about page."""
     total_reviews = Review.query.count()
     total_users = User.query.count()
     total_watched = WatchedMovie.query.count()

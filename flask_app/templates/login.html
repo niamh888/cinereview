@@ -10,7 +10,7 @@
 
 <div class="form-container">
     {% if errors.general %}
-        <div class="alert alert-error">{{ errors.general }}</div>
+    <div class="alert alert-error">{{ errors.general }}</div>
     {% endif %}
 
     <form method="POST" action="{{ url_for('login') }}" novalidate>
@@ -23,20 +23,17 @@
 
         <div class="form-group {% if errors.username %}has-error{% endif %}">
             <label for="username">Username</label>
-            <input type="text" id="username" name="username"
-                   value="{{ form_data.get('username', '') }}"
-                   placeholder="Your username" autofocus>
+            <input type="text" id="username" name="username" value="{{ form_data.get('username', '') }}"
+                placeholder="Your username" autofocus>
             {% if errors.username %}<span class="error-msg">{{ errors.username }}</span>{% endif %}
         </div>
 
         <div class="form-group {% if errors.password %}has-error{% endif %}">
             <label for="password">Password</label>
             <div class="input-with-toggle">
-                <input type="password" id="password" name="password"
-                       placeholder="Your password">
-                <button type="button" class="toggle-pw"
-                        onclick="toggleVisibility('password')"
-                        title="Show/hide password">&#128065;</button>
+                <input type="password" id="password" name="password" placeholder="Your password">
+                <button type="button" class="toggle-pw" onclick="toggleVisibility('password')"
+                    title="Show/hide password">&#128065;</button>
             </div>
             {% if errors.password %}<span class="error-msg">{{ errors.password }}</span>{% endif %}
         </div>
@@ -56,9 +53,9 @@
 </div>
 
 <script>
-function toggleVisibility(fieldId) {
-    const f = document.getElementById(fieldId);
-    f.type = f.type === 'password' ? 'text' : 'password';
-}
+    function toggleVisibility(fieldId) {
+        const f = document.getElementById(fieldId);
+        f.type = f.type === 'password' ? 'text' : 'password';
+    }
 </script>
 {% endblock %}
