@@ -149,7 +149,7 @@ Jinja2's `{# #}` is preferred over HTML `<!-- -->` inside templates because it n
    - **Interactive debugger** — exceptions show a full traceback in the browser with a console to inspect variables
    - **Detailed error pages** — instead of a generic 500 page you see exactly what went wrong and where
 
-   > **Never enable debug mode in production.** The interactive debugger allows arbitrary Python code to be executed in the browser. Render runs Gunicorn rather than Flask's dev server, so debug mode does not apply there regardless.
+   > **Never enable debug mode in production.** Render runs Gunicorn rather than Flask's dev server, so debug mode does not apply there regardless.
 
 ---
 
