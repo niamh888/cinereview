@@ -660,3 +660,69 @@ a:hover { text-decoration: underline; }
 }
 
 .footer a { color: #7c9ef0; }
+
+/* ---- Responsive ---- */
+
+@media (max-width: 768px) {
+    /* Movie hero: stack poster above info */
+    .movie-hero {
+        grid-template-columns: 1fr;
+        padding: 1.25rem;
+        gap: 1.25rem;
+    }
+    .movie-hero-poster { max-width: 200px; margin: 0 auto; }
+    .movie-hero-info h1 { font-size: 1.5rem; }
+    .rating-number { font-size: 1.6rem; }
+
+    /* About stats: 2 columns */
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+    /* Navbar: wrap to two rows — brand+links on top, search full-width below */
+    .nav-container {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 0.5rem 0;
+        gap: 0.4rem;
+    }
+    .nav-brand { flex: 1; }
+    .nav-search {
+        order: 3;
+        flex: 0 0 100%;
+        max-width: 100%;
+        padding-bottom: 0.5rem;
+    }
+    .nav-links { gap: 0.6rem; }
+    .nav-links a { font-size: 0.82rem; }
+
+    /* Main content */
+    .main-content { padding: 1rem; }
+    .page-header h1 { font-size: 1.5rem; }
+
+    /* Suggestion cards: stack to full width */
+    .suggestion-card { min-width: 100%; flex: 0 0 100%; }
+
+    /* Poster grid: slightly tighter gap */
+    .poster-grid { gap: 0.75rem; }
+}
+
+@media (max-width: 480px) {
+    /* Hide username and Write a Review link to save nav space */
+    .nav-username { display: none; }
+    .nav-hide-sm { display: none; }
+    .nav-links { gap: 0.5rem; }
+    .nav-links a { font-size: 0.78rem; }
+
+    /* Poster grid: force 2 columns */
+    .poster-grid { grid-template-columns: repeat(2, 1fr); }
+
+    /* About stats: single column */
+    .stats-grid { grid-template-columns: 1fr; }
+
+    /* Page header */
+    .page-header h1 { font-size: 1.3rem; }
+
+    /* Review header: stack name and stars */
+    .review-header { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+}

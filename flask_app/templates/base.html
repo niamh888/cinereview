@@ -20,7 +20,7 @@
 
             <ul class="nav-links">
                 <li><a href="{{ url_for('index') }}">Movies</a></li>
-                <li><a href="{{ url_for('add_review') }}">Write a Review</a></li>
+                <li class="nav-hide-sm"><a href="{{ url_for('add_review') }}">Write a Review</a></li>
                 <li><a href="{{ url_for('about') }}">About</a></li>
                 {% if current_user.is_authenticated %}
                     <li><a href="{{ url_for('my_movies') }}">My Movies</a></li>
