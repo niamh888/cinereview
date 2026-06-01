@@ -87,6 +87,8 @@ This project registers 11 routes in `app.py`:
 | `/movie/<int:movie_id>` | `movie_detail` | GET |
 | `/add-review` | `add_review` | GET, POST |
 | `/toggle-watched/<int:movie_id>` | `toggle_watched` | POST |
+| `/exclude-movie/<int:movie_id>` | `exclude_movie` | POST |
+| `/suggestions` | `suggestions` | GET |
 | `/my-movies` | `my_movies` | GET |
 | `/register` | `register` | GET, POST |
 | `/login` | `login` | GET, POST |
@@ -292,7 +294,8 @@ The `int:` converter means `/movie/abc` or `/movie/3.5` will never reach the fun
 - White card, `border-radius: 10px`, subtle shadow
 - Poster image fills top (2:3 aspect ratio), scales slightly on hover
 - **Watched state**: green border (`#86efac`), poster dimmed to 45% brightness, "Watched" overlay badge on the image
-- Card body: title, year, genre tag, TMDB rating badge, action buttons (Review / Watched toggle)
+- Card body: title, year, genre tag, TMDB rating badge, action buttons (Details / Review / No Thanks)
+- **No Thanks button**: red-tinted (`#fff1f2` background, `#991b1b` text) — marks the film as excluded, removes the card from the grid immediately, and prevents it appearing in suggestions
 
 ### Movie Detail Hero
 - Two-column grid: large poster on the left, film info on the right
@@ -302,6 +305,9 @@ The `int:` converter means `/movie/abc` or `/movie/3.5` will never reach the fun
 ### Suggestion Panel
 - Indigo-tinted border (`#c7d2fe`), white background
 - Shows up to 4 horizontal mini-cards (poster thumbnail + title, year, genre, rating)
+- Genre filter pills (All + 18 TMDB genres) let the user narrow suggestions by category; selecting a genre resets to page 1
+- "More Suggestions" button loads the next page of results from TMDB
+- Already-watched and "No Thanks" films are filtered out server-side before results are returned
 - Dismissible via an × button; hidden with `display: none`
 
 ### Buttons
@@ -838,6 +844,8 @@ Routes are named to match their purpose and use typed URL parameters where appro
 @app.route('/search')                                  # search results
 @app.route('/movie/<int:movie_id>')                    # single film
 @app.route('/toggle-watched/<int:movie_id>', methods=['POST'])  # watched toggle
+@app.route('/exclude-movie/<int:movie_id>', methods=['POST'])   # no thanks
+@app.route('/suggestions')                             # personalised suggestions (JSON)
 @app.route('/my-movies')                               # personal watchlist
 @app.route('/forgot-password', methods=['GET', 'POST'])
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
@@ -1033,7 +1041,7 @@ Checklist of the UCD Professional Academy Flask assignment requirements and how 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
 | Flask environment + virtual environment | ✅ | `.venv` set up, `requirements.txt` present |
-| `app.py` with defined routes | ✅ | 11 clearly defined routes |
+| `app.py` with defined routes | ✅ | 14 clearly defined routes |
 | Project structure | ✅ | Follows required layout (CSS is at `static/style.css`) |
 | 5+ HTML templates | ✅ | 11 templates including `base.html` |
 | Template inheritance via `base.html` | ✅ | All pages use `{% extends "base.html" %}` |

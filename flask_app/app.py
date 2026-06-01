@@ -62,6 +62,13 @@ class WatchedMovie(db.Model):
     __table_args__ = (db.UniqueConstraint('user_id', 'movie_id'),)
 
 
+class ExcludedMovie(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    movie_id = db.Column(db.Integer, nullable=False)
+    __table_args__ = (db.UniqueConstraint('user_id', 'movie_id'),)
+
+
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     movie_id = db.Column(db.Integer, nullable=False)
@@ -213,10 +220,15 @@ def index():
         error = 'Could not reach TMDB. Check your API key or internet connection.'
 
     watched_ids = set()
+    excluded_ids = set()
     if current_user.is_authenticated:
         watched_ids = {
             w.movie_id for w in WatchedMovie.query.filter_by(user_id=current_user.id).all()
         }
+        excluded_ids = {
+            e.movie_id for e in ExcludedMovie.query.filter_by(user_id=current_user.id).all()
+        }
+        movies = [m for m in movies if m['id'] not in excluded_ids]
 
     genres = sorted(tmdb.GENRE_MAP.items(), key=lambda x: x[1])
     return render_template('index.html', movies=movies, category=category,
@@ -285,6 +297,20 @@ def toggle_watched(movie_id):
     db.session.commit()
     cache_movie(movie_id)
     return jsonify({'watched': True})
+
+
+@app.route('/exclude-movie/<int:movie_id>', methods=['POST'])
+@login_required
+def exclude_movie(movie_id):
+    """Mark a movie as 'No Thanks' so it is hidden from the grid and suggestions."""
+    existing = ExcludedMovie.query.filter_by(user_id=current_user.id, movie_id=movie_id).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        return jsonify({'excluded': False})
+    db.session.add(ExcludedMovie(user_id=current_user.id, movie_id=movie_id))
+    db.session.commit()
+    return jsonify({'excluded': True})
 
 
 @app.route('/my-movies')
@@ -391,10 +417,16 @@ def suggestions():
         genre_id = request.args.get('genre_id', None, type=int)
 
         watched_ids = set()
+        excluded_ids = set()
         if current_user.is_authenticated:
             watched_ids = {
                 w.movie_id for w in WatchedMovie.query.filter_by(user_id=current_user.id).all()
             }
+            excluded_ids = {
+                e.movie_id for e in ExcludedMovie.query.filter_by(user_id=current_user.id).all()
+            }
+
+        skip_ids = watched_ids | excluded_ids
 
         if genre_id:
             picks = tmdb.discover_by_genre(genre_id, page)
@@ -413,7 +445,7 @@ def suggestions():
             picks = tmdb.trending(page)
             reason = 'Trending this week'
 
-        filtered = [m for m in picks if m['id'] not in watched_ids]
+        filtered = [m for m in picks if m['id'] not in skip_ids]
 
         results = [
             {
