@@ -4,7 +4,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import re
 import random
@@ -58,7 +58,7 @@ class WatchedMovie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     movie_id = db.Column(db.Integer, nullable=False)
-    watched_at = db.Column(db.DateTime, default=datetime.utcnow)
+    watched_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     __table_args__ = (db.UniqueConstraint('user_id', 'movie_id'),)
 
 
@@ -75,7 +75,7 @@ class Review(db.Model):
     name = db.Column(db.String(100), nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class MovieCache(db.Model):

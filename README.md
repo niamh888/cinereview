@@ -156,6 +156,54 @@ Jinja2's `{# #}` is preferred over HTML `<!-- -->` inside templates because it n
 
 ---
 
+## Running the Tests
+
+The project has an automated test suite that verifies every major route, form, database operation, and API endpoint. Tests run in seconds and require no internet connection — all calls to the TMDB movie API are intercepted automatically.
+
+### Install test dependencies
+
+```bash
+cd flask_app
+pip install -r requirements-dev.txt
+```
+
+### Run the full suite
+
+```bash
+python -m pytest tests/ -v
+```
+
+> Use `python -m pytest` rather than just `pytest` to ensure the command runs inside the correct virtual environment.
+
+### What a passing run looks like
+
+```
+tests/test_routes.py::TestPublicRoutes::test_home_page_returns_200 PASSED
+tests/test_routes.py::TestRegistration::test_valid_registration_creates_user PASSED
+...
+45 passed in 6.61s
+```
+
+### What the tests cover
+
+| Area | Tests |
+|---|---|
+| Public routes (home, search, movie detail, about) | 9 |
+| Registration (valid, duplicate, weak password, CAPTCHA, honeypot) | 8 |
+| Authentication (login, logout, wrong credentials) | 5 |
+| Access control (unauthenticated redirects) | 3 |
+| Watch tracking (toggle watched, my movies) | 3 |
+| Movie exclusion (No Thanks toggle) | 2 |
+| Reviews (valid submission, validation errors) | 5 |
+| Suggestions API (filters, exclusions) | 9 |
+| Mobile (viewport meta tag) | 1 |
+
+### What still needs manual testing
+
+Some things cannot be verified automatically — visual layout, email delivery, JavaScript behaviour, and cross-browser compatibility. Full instructions for these are in [REQUIREMENTS.md](REQUIREMENTS.md) under **Manual Testing Guide**.
+
+---
+
 ## Tech Stack
 
 ### Hosting & Infrastructure

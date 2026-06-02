@@ -1064,6 +1064,70 @@ Sensitive values are never stored in the code — they are set as environment va
 
 ## Testing the Application
 
+### Automated testing with pytest
+
+The project includes an automated test suite built with **pytest** — Python's standard testing framework. Tests run in seconds, require no internet connection, and give immediate pass/fail feedback for every major feature.
+
+#### Why automated tests?
+
+Manual testing relies on a person remembering to check every feature after every change. Automated tests do this instantly and consistently. The discipline mirrors the **Software Development Life Cycle (SDLC)** used in regulated industries: requirements are defined, then verified by tests, with full traceability between the two.
+
+#### Test files
+
+| File | Purpose |
+|---|---|
+| `tests/conftest.py` | Shared fixtures — test database, mock TMDB, login helper |
+| `tests/test_routes.py` | 45 test cases across 9 feature areas |
+| `requirements-dev.txt` | Development dependencies (includes pytest) |
+| `pytest.ini` | Tells pytest where to find tests and how to configure them |
+| `REQUIREMENTS.md` | Full requirements traceability matrix (UR → SR → TC) |
+
+#### How TMDB is mocked
+
+During testing, every call to the TMDB movie API is intercepted and replaced with a fixed mock response. This means:
+- Tests never hit the real API (no API key needed, no internet required)
+- Results are predictable — the same mock movie is returned every time
+- Tests run fast — no network latency
+
+```python
+# conftest.py — the mock is applied automatically to every test
+@pytest.fixture(autouse=True)
+def mock_tmdb():
+    with patch('tmdb.now_playing', return_value=MOCK_MOVIES), \
+         patch('tmdb.movie_detail', return_value=MOCK_MOVIE), ...:
+        yield
+```
+
+#### How the database is isolated
+
+Each test gets its own clean database — tables are dropped and recreated before every test runs. This means tests cannot affect each other, and no test data ever reaches the real database.
+
+#### How to run the tests
+
+```bash
+cd flask_app
+pip install -r requirements-dev.txt
+python -m pytest tests/ -v
+```
+
+Expected output: `45 passed` with no warnings.
+
+#### Requirements traceability
+
+Every test case maps back to a software requirement, which maps back to a user requirement. The full chain is documented in `REQUIREMENTS.md`:
+
+```
+UR-007: Users shall be able to mark movies as watched
+  → SR-007.1: POST /toggle-watched/<id> returns {"watched": true} on first call
+    → TC-026: test_toggle_watched_marks_movie  [AUTOMATED — PASSED]
+```
+
+#### What cannot be automated
+
+14 test cases require manual execution — visual layout, mobile responsiveness, email delivery, JavaScript behaviour, and cross-browser compatibility. Step-by-step instructions for each are in the **Manual Testing Guide** section of `REQUIREMENTS.md`.
+
+---
+
 ### Local testing
 
 During development, Flask runs a built-in development server on your own machine. Starting the app with:
