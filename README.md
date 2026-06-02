@@ -158,13 +158,13 @@ Jinja2's `{# #}` is preferred over HTML `<!-- -->` inside templates because it n
 
 ## Running the Tests
 
-The project has an automated test suite that verifies every major route, form, database operation, and API endpoint. Tests run in seconds and require no internet connection — all calls to the TMDB movie API are intercepted automatically.
+The project has an automated test suite that verifies every major route, form, database operation, API endpoint, page content, and accessibility requirement. Tests run in seconds and require no internet connection — all calls to the TMDB movie API are intercepted automatically.
 
 ### Install test dependencies
 
 ```bash
 cd flask_app
-pip install -r requirements-dev.txt
+python -m pip install -r requirements-dev.txt
 ```
 
 ### Run the full suite
@@ -181,7 +181,7 @@ python -m pytest tests/ -v
 tests/test_routes.py::TestPublicRoutes::test_home_page_returns_200 PASSED
 tests/test_routes.py::TestRegistration::test_valid_registration_creates_user PASSED
 ...
-45 passed in 6.61s
+65 passed in 7.55s
 ```
 
 ### What the tests cover
@@ -197,6 +197,27 @@ tests/test_routes.py::TestRegistration::test_valid_registration_creates_user PAS
 | Reviews (valid submission, validation errors) | 5 |
 | Suggestions API (filters, exclusions) | 9 |
 | Mobile (viewport meta tag) | 1 |
+| Page content verification (key elements on every page) | 14 |
+| Accessibility (WCAG 2.1 AA — skip nav, ARIA, landmarks) | 6 |
+
+### Test reports — generated automatically on every run
+
+Three artefacts are written to `flask_app/test-reports/` after every run:
+
+| Artefact | Purpose |
+|---|---|
+| `report_YYYY-MM-DD_HH-MM-SS.html` | Full HTML test report — open in a browser to review pass/fail detail, durations, and timestamps |
+| `test_history.log` | Running audit trail — one line per run showing date, result, and pass rate |
+| `anomaly_YYYY-MM-DD_HH-MM-SS.txt` | Generated **only on failure** — lists each failed test with full traceback and recommended action |
+
+The history log references the anomaly filename when failures occur, providing complete traceability:
+
+```
+2026-06-02 11:37:17 | FAIL | 64/65 passed | 1 FAILED | See: anomaly_2026-06-02_11-37-17.txt
+2026-06-02 11:39:48 | PASS | 65/65 passed
+```
+
+> `test-reports/` is listed in `.gitignore` and is never committed to the repository.
 
 ### What still needs manual testing
 

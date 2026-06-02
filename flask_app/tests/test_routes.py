@@ -382,6 +382,86 @@ class TestMobileViewport:
 
 
 # ===========================================================================
+# Page content verification — catches accidental removal of key elements
+# ===========================================================================
+
+class TestPageContent:
+
+    def test_home_page_renders_movie_title(self, client):
+        """Home page grid contains the mock movie title."""
+        assert b'Fight Club' in client.get('/').data
+
+    def test_home_page_has_all_category_tabs(self, client):
+        """Home page renders all four category tabs."""
+        data = client.get('/').data
+        assert b'Now Playing' in data
+        assert b'Popular'     in data
+        assert b'Top Rated'   in data
+        assert b'Upcoming'    in data
+
+    def test_home_page_has_suggest_button(self, client):
+        """Home page renders the Suggest a Movie button."""
+        assert b'Suggest a Movie for Me' in client.get('/').data
+
+    def test_search_results_contain_movie_title(self, client):
+        """Search results page renders the mock movie title."""
+        assert b'Fight Club' in client.get('/search?q=fight').data
+
+    def test_movie_detail_renders_title(self, client):
+        """Movie detail page renders the film title."""
+        assert b'Fight Club' in client.get('/movie/550').data
+
+    def test_movie_detail_has_cast_section(self, client):
+        """Movie detail page renders a Cast section."""
+        assert b'Cast' in client.get('/movie/550').data
+
+    def test_movie_detail_has_reviews_section(self, client):
+        """Movie detail page renders a User Reviews section."""
+        assert b'User Reviews' in client.get('/movie/550').data
+
+    def test_movie_detail_has_tmdb_rating(self, client):
+        """Movie detail page renders the TMDB rating label."""
+        assert b'TMDB' in client.get('/movie/550').data
+
+    def test_about_page_has_all_stat_labels(self, client):
+        """About page renders all three stat cards."""
+        data = client.get('/about').data
+        assert b'Reviews Written' in data
+        assert b'Films Watched'   in data
+        assert b'Members'         in data
+
+    def test_about_page_has_tech_stack(self, client):
+        """About page renders the Tech Stack section."""
+        data = client.get('/about').data
+        assert b'Flask'       in data
+        assert b'SQLAlchemy'  in data
+        assert b'Render'      in data
+
+    def test_register_page_has_required_fields(self, client):
+        """Register page renders username, email and password fields."""
+        data = client.get('/register').data
+        assert b'username' in data
+        assert b'email'    in data
+        assert b'password' in data
+
+    def test_login_page_has_required_fields(self, client):
+        """Login page renders username and password fields."""
+        data = client.get('/login').data
+        assert b'username' in data
+        assert b'password' in data
+
+    def test_my_movies_page_has_heading(self, auth_client):
+        """My Movies page renders a heading for authenticated users."""
+        assert b'My Movies' in auth_client.get('/my-movies').data
+
+    def test_add_review_page_has_form(self, client):
+        """Add review page renders rating and comment fields when a movie_id is provided."""
+        data = client.get('/add-review?movie_id=550').data
+        assert b'rating'  in data.lower()
+        assert b'comment' in data.lower()
+
+
+# ===========================================================================
 # TC-057 to TC-062 — Accessibility (automatable portion)
 # ===========================================================================
 

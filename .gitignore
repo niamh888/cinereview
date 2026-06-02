@@ -6,3 +6,4 @@ flask_app/instance/
 *.db
 .env
 .DS_Store
+flask_app/test-reports/

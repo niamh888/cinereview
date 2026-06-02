@@ -3,16 +3,20 @@ Shared fixtures for the CineReview test suite.
 
 How to run:
     cd flask_app
-    pip install pytest
-    pytest tests/ -v
+    pip install -r requirements-dev.txt
+    python -m pytest tests/ -v
 
 All TMDB API calls are patched automatically so tests never hit the real API.
 Each test gets a fresh in-memory database — no leftover data between tests.
+
+A timestamped HTML report is written to test-reports/ on every run.
+A one-line summary is appended to test-reports/test_history.log.
 """
 
 import os
 import sys
 import pytest
+from datetime import datetime
 from unittest.mock import patch
 
 # Ensure the flask_app directory is importable (tests/ is a subdirectory)
@@ -121,6 +125,73 @@ def auth_client(client, test_user):
         'website': '',        # honeypot must be empty
     }, follow_redirects=True)
     return client
+
+
+# ---------------------------------------------------------------------------
+# Test reporting hooks
+# ---------------------------------------------------------------------------
+
+def pytest_configure(config):
+    """Create a timestamped HTML report in test-reports/ for every run."""
+    os.makedirs('test-reports', exist_ok=True)
+    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    config.option.htmlpath = f'test-reports/report_{timestamp}.html'
+    config.option.self_contained_html = True
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):  # noqa: ARG001
+    """Append a summary to test_history.log and write an anomaly report on any failure."""
+    passed      = len(terminalreporter.stats.get('passed', []))
+    failed_list = terminalreporter.stats.get('failed', [])
+    error_list  = terminalreporter.stats.get('error', [])
+    failed      = len(failed_list)
+    errors      = len(error_list)
+    total       = passed + failed + errors
+    result      = 'PASS' if exitstatus == 0 else 'FAIL'
+    timestamp   = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Write a detailed anomaly report when any test fails
+    all_failures   = failed_list + error_list
+    file_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    anomaly_path   = f'test-reports/anomaly_{file_timestamp}.txt' if all_failures else None
+
+    # Append one-line entry to the running history log
+    line = f'{timestamp} | {result} | {passed}/{total} passed'
+    if failed:
+        line += f' | {failed} FAILED'
+    if errors:
+        line += f' | {errors} ERROR'
+    if anomaly_path:
+        line += f' | See: anomaly_{file_timestamp}.txt'
+    os.makedirs('test-reports', exist_ok=True)
+    with open('test-reports/test_history.log', 'a', encoding='utf-8') as f:
+        f.write(line + '\n')
+
+    if not all_failures:
+        return
+    with open(anomaly_path, 'w', encoding='utf-8') as f:
+        f.write('CineReview — Test Anomaly Report\n')
+        f.write('=' * 60 + '\n')
+        f.write(f'Date / Time  : {timestamp}\n')
+        f.write(f'Result       : {result}\n')
+        f.write(f'Tests passed : {passed}/{total}\n')
+        f.write(f'Anomalies    : {len(all_failures)}\n')
+        f.write('=' * 60 + '\n\n')
+
+        for i, report in enumerate(all_failures, 1):
+            status = 'FAILED' if report in failed_list else 'ERROR'
+            f.write(f'ANOMALY-{i:03d}  [{status}]\n')
+            f.write(f'Test        : {report.nodeid}\n')
+            f.write(f'Duration    : {report.duration:.3f}s\n')
+            f.write('Detail      :\n')
+            # longrepr gives the full traceback and assertion detail
+            for line_text in str(report.longrepr).splitlines():
+                f.write(f'  {line_text}\n')
+            f.write('\n' + '-' * 60 + '\n\n')
+
+        f.write('Action required: investigate each anomaly above,\n')
+        f.write('determine root cause, fix, and re-run the test suite.\n')
+        f.write('Do not deploy until all tests pass.\n')
 
 
 # ---------------------------------------------------------------------------

@@ -1076,11 +1076,12 @@ Manual testing relies on a person remembering to check every feature after every
 
 | File | Purpose |
 |---|---|
-| `tests/conftest.py` | Shared fixtures — test database, mock TMDB, login helper |
-| `tests/test_routes.py` | 45 test cases across 9 feature areas |
-| `requirements-dev.txt` | Development dependencies (includes pytest) |
+| `tests/conftest.py` | Shared fixtures — test database, mock TMDB, login helper, report hooks |
+| `tests/test_routes.py` | 65 test cases across 10 feature areas |
+| `requirements-dev.txt` | Development dependencies (pytest + pytest-html) |
 | `pytest.ini` | Tells pytest where to find tests and how to configure them |
 | `REQUIREMENTS.md` | Full requirements traceability matrix (UR → SR → TC) |
+| `ACCESSIBILITY.md` | WCAG 2.1 AA audit — findings, fixes applied, manual verification guide |
 
 #### How TMDB is mocked
 
@@ -1110,7 +1111,7 @@ pip install -r requirements-dev.txt
 python -m pytest tests/ -v
 ```
 
-Expected output: `45 passed` with no warnings.
+Expected output: `65 passed` with no warnings.
 
 #### Requirements traceability
 
@@ -1121,6 +1122,25 @@ UR-007: Users shall be able to mark movies as watched
   → SR-007.1: POST /toggle-watched/<id> returns {"watched": true} on first call
     → TC-026: test_toggle_watched_marks_movie  [AUTOMATED — PASSED]
 ```
+
+#### Automated test reporting
+
+Three artefacts are generated in `flask_app/test-reports/` on every run:
+
+| Artefact | When generated | Purpose |
+|---|---|---|
+| `report_YYYY-MM-DD_HH-MM-SS.html` | Every run | Full HTML report — open in browser to review pass/fail, durations, timestamps |
+| `test_history.log` | Every run | Running audit trail — one line per run with date, result, and pass rate |
+| `anomaly_YYYY-MM-DD_HH-MM-SS.txt` | Failures only | Lists each failed test with full traceback and recommended corrective action |
+
+The history log references the anomaly filename on failure, providing complete traceability between run record and deviation detail:
+
+```
+2026-06-02 11:37:17 | FAIL | 64/65 passed | 1 FAILED | See: anomaly_2026-06-02_11-37-17.txt
+2026-06-02 11:39:48 | PASS | 65/65 passed
+```
+
+This mirrors the anomaly and deviation management processes used in regulated software development (ISO 62304 §9 — Software Problem Resolution).
 
 #### What cannot be automated
 
