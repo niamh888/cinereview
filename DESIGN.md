@@ -340,14 +340,15 @@ All responsive behaviour is handled with three `@media` breakpoints at the botto
 ### Suggestion Panel
 - Indigo-tinted border (`#c7d2fe`), white background
 - Shows up to 4 horizontal mini-cards (poster thumbnail + title, year, genre, rating)
-- Genre filter pills (All Genres + 18 TMDB genres) let the user narrow suggestions by category
-- Decade filter pills (All Eras, 1970s–2020s) let the user filter by release era
-- Genre and decade filters can be combined — e.g. Horror films from the 1990s
-- Age rating filter (green pills) — **Little Ones** (G), **Kids** (G & PG), **Tweens** (up to PG-13) — uses US certifications via the TMDB discover endpoint
-- Language filter (orange pills) — **French, Italian, Spanish, German, Korean, Japanese, Hindi** — filters by original language using TMDB's `with_original_language` parameter
-- All four filters (genre, decade, age, language) are independent and can be combined — e.g. *Popular Kids French films from the 1990s*
-- "More Suggestions" button loads the next page of results from TMDB
+- Four independent filter rows, each supporting **multiple simultaneous selections**:
+  - **Genre** (indigo pills) — All Genres + 18 TMDB genres, e.g. Action, Comedy, Horror
+  - **Decade** (indigo-light pills) — All Eras, 1970s–2020s; multiple decades use the bounding date range (e.g. 1990s + 2010s → 1990–2019)
+  - **Age Rating** (green pills) — Little Ones (G), Kids (G & PG), Tweens (up to PG-13); uses US certifications; multiple selections take the most permissive rating
+  - **Language** (orange pills) — French, Italian, Spanish, German, Korean, Japanese, Hindi; multiple languages use TMDB's OR syntax (`fr|it`)
+- All four filters can be combined — e.g. *Popular Kids French, Italian films from the 1990s & 2010s*
+- "More Suggestions" button pages through further results without repeating
 - Already-watched and "No Thanks" films are filtered out server-side before results are returned
+- Clicking an active filter deselects it; clicking the "All" button for a row clears all selections in that row
 - Dismissible via an × button; hidden with `display: none`
 
 ### Buttons
@@ -898,6 +899,43 @@ Routes are named to match their purpose and use typed URL parameters where appro
 ### Proper indentation
 
 All Python files use consistent **4-space indentation** throughout, following PEP 8 (the Python style standard). HTML templates use **2-space indentation** for nested elements. Formatting was applied using **Alt + Shift + F** (VS Code's Format Document command), which automatically corrects indentation, spacing, and line length across the entire file in one step — ensuring consistency that is difficult to maintain by hand.
+
+---
+
+### Shared helper functions to avoid repetition
+
+The suggestion panel has four filter rows (genre, decade, age rating, language), each with identical toggle behaviour. Rather than writing four near-identical functions, a single shared helper handles the logic for all of them:
+
+```javascript
+// Shared helper — toggles a value in a Set and syncs button active states
+function toggleFilterBtn(value, filterSet, btnSelector, dataAttr) {
+    if (!value) {
+        filterSet.clear();                      // "All" button — clear the whole set
+    } else if (filterSet.has(value)) {
+        filterSet.delete(value);                // already selected — deselect
+    } else {
+        filterSet.add(value);                   // not selected — add
+    }
+    // sync button active states to the set
+    document.querySelectorAll(btnSelector).forEach(b => b.classList.remove('active'));
+    if (filterSet.size === 0) {
+        document.querySelector(`${btnSelector}[${dataAttr}=""]`)?.classList.add('active');
+    } else {
+        filterSet.forEach(v => {
+            document.querySelector(`${btnSelector}[${dataAttr}="${v}"]`)?.classList.add('active');
+        });
+    }
+}
+```
+
+Each filter's public function is then a one-liner that delegates to the helper:
+
+```javascript
+function setGenre(btn, v)  { toggleFilterBtn(v, currentGenres,  '.genre-filter-btn',  'data-genre');  currentPage = 1; fetchSuggestions(); }
+function setDecade(btn, v) { toggleFilterBtn(v, currentDecades, '.decade-filter-btn', 'data-decade'); currentPage = 1; fetchSuggestions(); }
+```
+
+Each filter's state is held in a JavaScript `Set`, which automatically prevents duplicates and makes membership checks (`has()`) and removal (`delete()`) straightforward. The selected values are serialised to comma-separated strings when passed to the server.
 
 ---
 

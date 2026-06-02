@@ -18,8 +18,10 @@ CineReview was built to solve exactly that: a simple way to log the movies you'v
 - Search for any film via TMDB
 - Read and write reviews (1–5 star rating + comment)
 - Mark movies as watched and view your personal watched list
-- Personalised suggestions based on your last watched film, with genre filtering and pagination
-- Mark movies as "No Thanks" to permanently hide them from the grid and suggestions
+- Personalised suggestions based on your last watched film
+- Filter suggestions by **genre**, **decade** (1970s–2020s), **age rating** (Little Ones / Kids / Tweens), and **language** (French, Italian, Spanish, German, Korean, Japanese, Hindi) — all filters support multiple selections and can be combined
+- Page through more suggestions without repeating films already watched or excluded
+- Mark movies as **No Thanks** on the detail page to permanently hide them from the grid and suggestions
 - User accounts with registration, login, and password reset by email
 
 ---
