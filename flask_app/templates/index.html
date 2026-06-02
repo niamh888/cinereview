@@ -206,38 +206,62 @@ function moreSuggestions() {
     fetchSuggestions();
 }
 
-// Switches to a genre filter and resets to page 1
+// Toggles a genre filter — clicking an active filter deselects it
 function setGenre(btn, genreId) {
+    const isActive = btn.classList.contains('active');
     document.querySelectorAll('.genre-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentGenre = genreId;
+    if (isActive) {
+        currentGenre = '';
+        document.querySelector('.genre-filter-btn[data-genre=""]')?.classList.add('active');
+    } else {
+        btn.classList.add('active');
+        currentGenre = genreId;
+    }
     currentPage = 1;
     fetchSuggestions();
 }
 
-// Switches to a decade filter and resets to page 1
+// Toggles a decade filter — clicking an active filter deselects it
 function setDecade(btn, decade) {
+    const isActive = btn.classList.contains('active');
     document.querySelectorAll('.decade-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentDecade = decade;
+    if (isActive) {
+        currentDecade = '';
+        document.querySelector('.decade-filter-btn[data-decade=""]')?.classList.add('active');
+    } else {
+        btn.classList.add('active');
+        currentDecade = decade;
+    }
     currentPage = 1;
     fetchSuggestions();
 }
 
-// Switches to an age rating filter and resets to page 1
+// Toggles an age rating filter — clicking an active filter deselects it
 function setAge(btn, age) {
+    const isActive = btn.classList.contains('active');
     document.querySelectorAll('.age-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentAge = age;
+    if (isActive) {
+        currentAge = '';
+        document.querySelector('.age-filter-btn[data-age=""]')?.classList.add('active');
+    } else {
+        btn.classList.add('active');
+        currentAge = age;
+    }
     currentPage = 1;
     fetchSuggestions();
 }
 
-// Switches to a language filter and resets to page 1
+// Toggles a language filter — clicking an active filter deselects it
 function setLang(btn, lang) {
+    const isActive = btn.classList.contains('active');
     document.querySelectorAll('.lang-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentLang = lang;
+    if (isActive) {
+        currentLang = '';
+        document.querySelector('.lang-filter-btn[data-lang=""]')?.classList.add('active');
+    } else {
+        btn.classList.add('active');
+        currentLang = lang;
+    }
     currentPage = 1;
     fetchSuggestions();
 }
