@@ -138,40 +138,56 @@ function toggleFilter() {
 }
 
 let currentPage = 1;
-let currentGenre = '';
-let currentDecade = '';
-let currentAge = '';
-let currentLang = '';
+let currentGenres  = new Set();
+let currentDecades = new Set();
+let currentAges    = new Set();
+let currentLangs   = new Set();
+
+// Shared helper — toggles a value in a Set and syncs button active states
+function toggleFilterBtn(value, filterSet, btnSelector, dataAttr) {
+    if (!value) {
+        filterSet.clear();
+    } else if (filterSet.has(value)) {
+        filterSet.delete(value);
+    } else {
+        filterSet.add(value);
+    }
+    document.querySelectorAll(btnSelector).forEach(b => b.classList.remove('active'));
+    if (filterSet.size === 0) {
+        document.querySelector(`${btnSelector}[${dataAttr}=""]`)?.classList.add('active');
+    } else {
+        filterSet.forEach(v => {
+            document.querySelector(`${btnSelector}[${dataAttr}="${v}"]`)?.classList.add('active');
+        });
+    }
+}
 
 // Resets all filters and fetches page 1
 function loadSuggestions() {
     currentPage = 1;
-    currentGenre = '';
-    currentDecade = '';
-    currentAge = '';
-    currentLang = '';
-    document.querySelectorAll('.genre-filter-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.decade-filter-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.age-filter-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.lang-filter-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('.genre-filter-btn[data-genre=""]')?.classList.add('active');
-    document.querySelector('.decade-filter-btn[data-decade=""]')?.classList.add('active');
-    document.querySelector('.age-filter-btn[data-age=""]')?.classList.add('active');
-    document.querySelector('.lang-filter-btn[data-lang=""]')?.classList.add('active');
+    currentGenres.clear();
+    currentDecades.clear();
+    currentAges.clear();
+    currentLangs.clear();
+    ['.genre-filter-btn', '.decade-filter-btn', '.age-filter-btn', '.lang-filter-btn']
+        .forEach(sel => {
+            document.querySelectorAll(sel).forEach(b => b.classList.remove('active'));
+            document.querySelector(`${sel}:first-child`)?.classList.add('active');
+        });
     fetchSuggestions();
 }
 
-// Fetches suggestions using the current page and genre state
+// Fetches suggestions passing all active filter sets as comma-separated values
 function fetchSuggestions() {
     const btn = document.getElementById('suggest-btn');
     btn.textContent = 'Loading...';
     btn.disabled = true;
 
     const params = new URLSearchParams({ page: currentPage });
-    if (currentGenre) params.set('genre_id', currentGenre);
-    if (currentDecade) params.set('decade', currentDecade);
-    if (currentAge) params.set('age_rating', currentAge);
-    if (currentLang) params.set('language', currentLang);
+    if (currentGenres.size  > 0) params.set('genre_ids',   [...currentGenres].join(','));
+    if (currentDecades.size > 0) params.set('decades',     [...currentDecades].join(','));
+    if (currentAges.size    > 0) params.set('age_ratings', [...currentAges].join(','));
+    if (currentLangs.size   > 0) params.set('languages',   [...currentLangs].join(','));
 
     fetch(`/suggestions?${params}`)
         .then(res => res.json())
@@ -206,65 +222,11 @@ function moreSuggestions() {
     fetchSuggestions();
 }
 
-// Toggles a genre filter — clicking an active filter deselects it
-function setGenre(btn, genreId) {
-    const isActive = btn.classList.contains('active');
-    document.querySelectorAll('.genre-filter-btn').forEach(b => b.classList.remove('active'));
-    if (isActive) {
-        currentGenre = '';
-        document.querySelector('.genre-filter-btn[data-genre=""]')?.classList.add('active');
-    } else {
-        btn.classList.add('active');
-        currentGenre = genreId;
-    }
-    currentPage = 1;
-    fetchSuggestions();
-}
-
-// Toggles a decade filter — clicking an active filter deselects it
-function setDecade(btn, decade) {
-    const isActive = btn.classList.contains('active');
-    document.querySelectorAll('.decade-filter-btn').forEach(b => b.classList.remove('active'));
-    if (isActive) {
-        currentDecade = '';
-        document.querySelector('.decade-filter-btn[data-decade=""]')?.classList.add('active');
-    } else {
-        btn.classList.add('active');
-        currentDecade = decade;
-    }
-    currentPage = 1;
-    fetchSuggestions();
-}
-
-// Toggles an age rating filter — clicking an active filter deselects it
-function setAge(btn, age) {
-    const isActive = btn.classList.contains('active');
-    document.querySelectorAll('.age-filter-btn').forEach(b => b.classList.remove('active'));
-    if (isActive) {
-        currentAge = '';
-        document.querySelector('.age-filter-btn[data-age=""]')?.classList.add('active');
-    } else {
-        btn.classList.add('active');
-        currentAge = age;
-    }
-    currentPage = 1;
-    fetchSuggestions();
-}
-
-// Toggles a language filter — clicking an active filter deselects it
-function setLang(btn, lang) {
-    const isActive = btn.classList.contains('active');
-    document.querySelectorAll('.lang-filter-btn').forEach(b => b.classList.remove('active'));
-    if (isActive) {
-        currentLang = '';
-        document.querySelector('.lang-filter-btn[data-lang=""]')?.classList.add('active');
-    } else {
-        btn.classList.add('active');
-        currentLang = lang;
-    }
-    currentPage = 1;
-    fetchSuggestions();
-}
+// Each set* function delegates to the shared helper then refreshes
+function setGenre(btn, v)  { toggleFilterBtn(v, currentGenres,  '.genre-filter-btn',  'data-genre');  currentPage = 1; fetchSuggestions(); }
+function setDecade(btn, v) { toggleFilterBtn(v, currentDecades, '.decade-filter-btn', 'data-decade'); currentPage = 1; fetchSuggestions(); }
+function setAge(btn, v)    { toggleFilterBtn(v, currentAges,    '.age-filter-btn',    'data-age');    currentPage = 1; fetchSuggestions(); }
+function setLang(btn, v)   { toggleFilterBtn(v, currentLangs,   '.lang-filter-btn',   'data-lang');   currentPage = 1; fetchSuggestions(); }
 
 // Hides the suggestions panel and resets the button label
 function dismissSuggestions() {

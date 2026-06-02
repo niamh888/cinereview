@@ -447,7 +447,6 @@ def suggestions():
     """Return up to 4 movie suggestions as JSON — filtered by genre and page if provided."""
     try:
         page = request.args.get('page', 1, type=int)
-        genre_id = request.args.get('genre_id', None, type=int)
 
         watched_ids = set()
         excluded_ids = set()
@@ -461,47 +460,50 @@ def suggestions():
 
         skip_ids = watched_ids | excluded_ids
 
-        decade = request.args.get('decade', None)
-        age_rating = request.args.get('age_rating', None)
-        date_gte, date_lte = None, None
-        cert, cert_lte = None, None
+        # Parse comma-separated multi-select values from the query string
+        genre_ids   = [int(g) for g in request.args.get('genre_ids', '').split(',')
+                       if g.strip().isdigit()]
+        decade_keys = [d for d in request.args.get('decades', '').split(',')
+                       if d in DECADES]
+        age_keys    = [a for a in request.args.get('age_ratings', '').split(',')
+                       if a in AGE_RATINGS]
+        lang_codes  = [l for l in request.args.get('languages', '').split(',')
+                       if l in LANGUAGES]
 
-        if decade and decade in DECADES:
-            date_gte, date_lte = DECADES[decade]
-        language = request.args.get('language', None)
-        if language and language not in LANGUAGES:
-            language = None
+        # Build TMDB discover params from multi-select values
+        genre_param = '|'.join(str(g) for g in genre_ids) if genre_ids else None
 
+        date_range = None
+        if decade_keys:
+            date_range = (min(DECADES[d][0] for d in decade_keys),
+                          max(DECADES[d][1] for d in decade_keys))
+
+        lang_param = '|'.join(lang_codes) if lang_codes else None
+
+        # Take the most permissive age rating when multiple are selected
         certification = None
-        if age_rating and age_rating in AGE_RATINGS:
-            rating_info = AGE_RATINGS[age_rating]
-            if 'cert' in rating_info:
-                certification = ('exact', rating_info['cert'])
-            elif 'cert_lte' in rating_info:
-                certification = ('lte', rating_info['cert_lte'])
+        age_priority = ['tweens', 'kids', 'little_ones']
+        for key in age_priority:
+            if key in age_keys:
+                info = AGE_RATINGS[key]
+                certification = ('lte', info['cert_lte']) if 'cert_lte' in info \
+                                else ('exact', info['cert'])
+                break
 
-        date_range = (date_gte, date_lte) if (date_gte or date_lte) else None
-
-        if genre_id or date_range or certification or language:
+        if genre_ids or date_range or certification or lang_codes:
             picks = tmdb.discover(
-                genre_id=genre_id, date_range=date_range,
-                certification=certification, language=language, page=page
+                genre_id=genre_param, date_range=date_range,
+                certification=certification, language=lang_param, page=page
             )
-            genre_label  = tmdb.GENRE_MAP.get(genre_id, '') if genre_id else ''
-            decade_label = f'the {decade}s' if decade else ''
-            age_label    = AGE_RATINGS[age_rating]['label'] if age_rating else ''
-            lang_label   = LANGUAGES.get(language, '') if language else ''
+            genre_labels  = [tmdb.GENRE_MAP[g] for g in genre_ids if g in tmdb.GENRE_MAP]
+            decade_labels = [f'{d}s' for d in decade_keys]
+            age_labels    = [AGE_RATINGS[a]['label'] for a in age_keys]
+            lang_labels   = [LANGUAGES[l] for l in lang_codes]
 
-            parts = []
-            if age_label:
-                parts.append(age_label)
-            if lang_label:
-                parts.append(lang_label)
-            if genre_label:
-                parts.append(genre_label)
-            reason = 'Popular ' + (' '.join(parts) + ' films' if parts else 'films')
-            if decade_label:
-                reason += f' from {decade_label}'
+            parts = age_labels + lang_labels + genre_labels
+            reason = 'Popular ' + (', '.join(parts) + ' films' if parts else 'films')
+            if decade_labels:
+                reason += ' from the ' + ' & '.join(decade_labels)
         elif current_user.is_authenticated:
             last = WatchedMovie.query.filter_by(
                 user_id=current_user.id
