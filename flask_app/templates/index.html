@@ -18,10 +18,19 @@
             <button class="dismiss-btn" onclick="dismissSuggestions()">&times;</button>
         </div>
         <div class="genre-filters">
-            <button class="genre-filter-btn active" data-genre="" onclick="setGenre(this, '')">All</button>
+            <button class="genre-filter-btn active" data-genre="" onclick="setGenre(this, '')">All Genres</button>
             {% for genre_id, genre_name in genres %}
             <button class="genre-filter-btn" data-genre="{{ genre_id }}" onclick="setGenre(this, '{{ genre_id }}')">{{ genre_name }}</button>
             {% endfor %}
+        </div>
+        <div class="decade-filters">
+            <button class="decade-filter-btn active" data-decade="" onclick="setDecade(this, '')">All Eras</button>
+            <button class="decade-filter-btn" data-decade="1970" onclick="setDecade(this, '1970')">1970s</button>
+            <button class="decade-filter-btn" data-decade="1980" onclick="setDecade(this, '1980')">1980s</button>
+            <button class="decade-filter-btn" data-decade="1990" onclick="setDecade(this, '1990')">1990s</button>
+            <button class="decade-filter-btn" data-decade="2000" onclick="setDecade(this, '2000')">2000s</button>
+            <button class="decade-filter-btn" data-decade="2010" onclick="setDecade(this, '2010')">2010s</button>
+            <button class="decade-filter-btn" data-decade="2020" onclick="setDecade(this, '2020')">2020s</button>
         </div>
         <div id="suggestions-list" class="suggestions-list"></div>
         <div class="suggestions-footer">
@@ -116,14 +125,17 @@ function toggleFilter() {
 
 let currentPage = 1;
 let currentGenre = '';
+let currentDecade = '';
 
-// Resets state and fetches page 1 with no genre filter
+// Resets all filters and fetches page 1
 function loadSuggestions() {
     currentPage = 1;
     currentGenre = '';
+    currentDecade = '';
     document.querySelectorAll('.genre-filter-btn').forEach(b => b.classList.remove('active'));
-    const allBtn = document.querySelector('.genre-filter-btn[data-genre=""]');
-    if (allBtn) allBtn.classList.add('active');
+    document.querySelectorAll('.decade-filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.genre-filter-btn[data-genre=""]')?.classList.add('active');
+    document.querySelector('.decade-filter-btn[data-decade=""]')?.classList.add('active');
     fetchSuggestions();
 }
 
@@ -135,6 +147,7 @@ function fetchSuggestions() {
 
     const params = new URLSearchParams({ page: currentPage });
     if (currentGenre) params.set('genre_id', currentGenre);
+    if (currentDecade) params.set('decade', currentDecade);
 
     fetch(`/suggestions?${params}`)
         .then(res => res.json())
@@ -174,6 +187,15 @@ function setGenre(btn, genreId) {
     document.querySelectorAll('.genre-filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentGenre = genreId;
+    currentPage = 1;
+    fetchSuggestions();
+}
+
+// Switches to a decade filter and resets to page 1
+function setDecade(btn, decade) {
+    document.querySelectorAll('.decade-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentDecade = decade;
     currentPage = 1;
     fetchSuggestions();
 }

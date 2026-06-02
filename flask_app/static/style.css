@@ -214,7 +214,11 @@ a:hover { text-decoration: underline; }
 .suggestion-meta { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 .suggestions-empty { color: #94a3b8; font-size: 0.9rem; font-style: italic; padding: 0.5rem 0; }
 
-.genre-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.85rem; }
+.genre-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.decade-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.85rem; }
+.decade-filter-btn { padding: 0.25rem 0.65rem; border-radius: 20px; border: 1px solid #e0e7ff; background: #fff; color: #475569; font-size: 0.78rem; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.decade-filter-btn:hover { border-color: #4f6ef7; color: #4f6ef7; }
+.decade-filter-btn.active { background: #4f6ef7; color: #fff; border-color: #4f6ef7; }
 
 .genre-filter-btn {
     padding: 0.25rem 0.65rem;

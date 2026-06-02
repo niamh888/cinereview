@@ -198,6 +198,15 @@ CATEGORIES = {
     'upcoming':    'Upcoming',
 }
 
+DECADES = {
+    '1970': ('1970-01-01', '1979-12-31'),
+    '1980': ('1980-01-01', '1989-12-31'),
+    '1990': ('1990-01-01', '1999-12-31'),
+    '2000': ('2000-01-01', '2009-12-31'),
+    '2010': ('2010-01-01', '2019-12-31'),
+    '2020': ('2020-01-01', '2029-12-31'),
+}
+
 
 @app.route('/')
 def index():
@@ -432,9 +441,21 @@ def suggestions():
 
         skip_ids = watched_ids | excluded_ids
 
-        if genre_id:
-            picks = tmdb.discover_by_genre(genre_id, page)
-            reason = f'Popular {tmdb.GENRE_MAP.get(genre_id, "genre")} films'
+        decade = request.args.get('decade', None)
+        date_gte, date_lte = None, None
+        if decade and decade in DECADES:
+            date_gte, date_lte = DECADES[decade]
+
+        if genre_id or date_gte:
+            picks = tmdb.discover(genre_id=genre_id, date_gte=date_gte, date_lte=date_lte, page=page)
+            genre_label = tmdb.GENRE_MAP.get(genre_id, '') if genre_id else ''
+            decade_label = f'the {decade}s' if decade else ''
+            if genre_label and decade_label:
+                reason = f'Popular {genre_label} films from {decade_label}'
+            elif genre_label:
+                reason = f'Popular {genre_label} films'
+            else:
+                reason = f'Popular films from {decade_label}'
         elif current_user.is_authenticated:
             last = WatchedMovie.query.filter_by(
                 user_id=current_user.id

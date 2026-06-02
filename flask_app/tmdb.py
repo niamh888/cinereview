@@ -70,9 +70,16 @@ def trending(page=1):
     return _get('/trending/movie/week', page=page)['results']
 
 
-def discover_by_genre(genre_id, page=1):
-    """Return popular movies filtered by a TMDB genre ID."""
-    return _get('/discover/movie', with_genres=genre_id, sort_by='popularity.desc', page=page)['results']
+def discover(genre_id=None, date_gte=None, date_lte=None, page=1):
+    """Return movies from the TMDB discover endpoint, filtered by genre and/or release date range."""
+    params = {'sort_by': 'popularity.desc', 'page': page}
+    if genre_id:
+        params['with_genres'] = genre_id
+    if date_gte:
+        params['primary_release_date.gte'] = date_gte
+    if date_lte:
+        params['primary_release_date.lte'] = date_lte
+    return _get('/discover/movie', **params)['results']
 
 
 def search_movies(query):

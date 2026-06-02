@@ -340,7 +340,9 @@ All responsive behaviour is handled with three `@media` breakpoints at the botto
 ### Suggestion Panel
 - Indigo-tinted border (`#c7d2fe`), white background
 - Shows up to 4 horizontal mini-cards (poster thumbnail + title, year, genre, rating)
-- Genre filter pills (All + 18 TMDB genres) let the user narrow suggestions by category; selecting a genre resets to page 1
+- Genre filter pills (All Genres + 18 TMDB genres) let the user narrow suggestions by category
+- Decade filter pills (All Eras, 1970s–2020s) let the user filter by release era
+- Genre and decade filters can be combined — e.g. Horror films from the 1990s
 - "More Suggestions" button loads the next page of results from TMDB
 - Already-watched and "No Thanks" films are filtered out server-side before results are returned
 - Dismissible via an × button; hidden with `display: none`
