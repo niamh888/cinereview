@@ -207,6 +207,13 @@ DECADES = {
     '2020': ('2020-01-01', '2029-12-31'),
 }
 
+# US certification ratings used for child-friendly filtering in the suggestions panel
+AGE_RATINGS = {
+    'little_ones': {'cert':     'G',     'label': 'Little Ones',  'desc': 'G rated'},
+    'kids':        {'cert_lte': 'PG',    'label': 'Kids',         'desc': 'G & PG rated'},
+    'tweens':      {'cert_lte': 'PG-13', 'label': 'Tweens',       'desc': 'up to PG-13'},
+}
+
 
 @app.route('/')
 def index():
@@ -242,7 +249,7 @@ def index():
     genres = sorted(tmdb.GENRE_MAP.items(), key=lambda x: x[1])
     return render_template('index.html', movies=movies, category=category,
                            categories=CATEGORIES, watched_ids=watched_ids,
-                           error=error, genres=genres)
+                           error=error, genres=genres, age_ratings=AGE_RATINGS)
 
 
 @app.route('/search')
@@ -442,20 +449,34 @@ def suggestions():
         skip_ids = watched_ids | excluded_ids
 
         decade = request.args.get('decade', None)
+        age_rating = request.args.get('age_rating', None)
         date_gte, date_lte = None, None
+        cert, cert_lte = None, None
+
         if decade and decade in DECADES:
             date_gte, date_lte = DECADES[decade]
+        if age_rating and age_rating in AGE_RATINGS:
+            rating_info = AGE_RATINGS[age_rating]
+            cert     = rating_info.get('cert')
+            cert_lte = rating_info.get('cert_lte')
 
-        if genre_id or date_gte:
-            picks = tmdb.discover(genre_id=genre_id, date_gte=date_gte, date_lte=date_lte, page=page)
-            genre_label = tmdb.GENRE_MAP.get(genre_id, '') if genre_id else ''
+        if genre_id or date_gte or cert or cert_lte:
+            picks = tmdb.discover(
+                genre_id=genre_id, date_gte=date_gte, date_lte=date_lte,
+                cert=cert, cert_lte=cert_lte, page=page
+            )
+            genre_label  = tmdb.GENRE_MAP.get(genre_id, '') if genre_id else ''
             decade_label = f'the {decade}s' if decade else ''
-            if genre_label and decade_label:
-                reason = f'Popular {genre_label} films from {decade_label}'
-            elif genre_label:
-                reason = f'Popular {genre_label} films'
-            else:
-                reason = f'Popular films from {decade_label}'
+            age_label    = AGE_RATINGS[age_rating]['label'] if age_rating else ''
+
+            parts = []
+            if age_label:
+                parts.append(age_label)
+            if genre_label:
+                parts.append(genre_label)
+            reason = 'Popular ' + (' '.join(parts) + ' films' if parts else 'films')
+            if decade_label:
+                reason += f' from {decade_label}'
         elif current_user.is_authenticated:
             last = WatchedMovie.query.filter_by(
                 user_id=current_user.id

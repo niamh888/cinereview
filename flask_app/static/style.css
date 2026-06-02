@@ -220,6 +220,12 @@ a:hover { text-decoration: underline; }
 .decade-filter-btn:hover { border-color: #4f6ef7; color: #4f6ef7; }
 .decade-filter-btn.active { background: #4f6ef7; color: #fff; border-color: #4f6ef7; }
 
+.age-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.85rem; }
+.age-filter-btn { padding: 0.25rem 0.65rem; border-radius: 20px; border: 1px solid #bbf7d0; background: #fff; color: #475569; font-size: 0.78rem; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.age-filter-btn:hover { border-color: #16a34a; color: #16a34a; }
+.age-filter-btn.active { background: #16a34a; color: #fff; border-color: #16a34a; }
+.age-desc { font-size: 0.72rem; opacity: 0.8; }
+
 .genre-filter-btn {
     padding: 0.25rem 0.65rem;
     border-radius: 20px;

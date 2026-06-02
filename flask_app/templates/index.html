@@ -32,6 +32,14 @@
             <button class="decade-filter-btn" data-decade="2010" onclick="setDecade(this, '2010')">2010s</button>
             <button class="decade-filter-btn" data-decade="2020" onclick="setDecade(this, '2020')">2020s</button>
         </div>
+        <div class="age-filters">
+            <button class="age-filter-btn active" data-age="" onclick="setAge(this, '')">All Ages</button>
+            {% for key, info in age_ratings.items() %}
+            <button class="age-filter-btn" data-age="{{ key }}" onclick="setAge(this, '{{ key }}')">
+                {{ info.label }} <span class="age-desc">({{ info.desc }})</span>
+            </button>
+            {% endfor %}
+        </div>
         <div id="suggestions-list" class="suggestions-list"></div>
         <div class="suggestions-footer">
             <button class="btn btn-secondary btn-sm" onclick="moreSuggestions()">&#8635; More Suggestions</button>
@@ -126,16 +134,20 @@ function toggleFilter() {
 let currentPage = 1;
 let currentGenre = '';
 let currentDecade = '';
+let currentAge = '';
 
 // Resets all filters and fetches page 1
 function loadSuggestions() {
     currentPage = 1;
     currentGenre = '';
     currentDecade = '';
+    currentAge = '';
     document.querySelectorAll('.genre-filter-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.decade-filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.age-filter-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('.genre-filter-btn[data-genre=""]')?.classList.add('active');
     document.querySelector('.decade-filter-btn[data-decade=""]')?.classList.add('active');
+    document.querySelector('.age-filter-btn[data-age=""]')?.classList.add('active');
     fetchSuggestions();
 }
 
@@ -148,6 +160,7 @@ function fetchSuggestions() {
     const params = new URLSearchParams({ page: currentPage });
     if (currentGenre) params.set('genre_id', currentGenre);
     if (currentDecade) params.set('decade', currentDecade);
+    if (currentAge) params.set('age_rating', currentAge);
 
     fetch(`/suggestions?${params}`)
         .then(res => res.json())
@@ -196,6 +209,15 @@ function setDecade(btn, decade) {
     document.querySelectorAll('.decade-filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentDecade = decade;
+    currentPage = 1;
+    fetchSuggestions();
+}
+
+// Switches to an age rating filter and resets to page 1
+function setAge(btn, age) {
+    document.querySelectorAll('.age-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentAge = age;
     currentPage = 1;
     fetchSuggestions();
 }
