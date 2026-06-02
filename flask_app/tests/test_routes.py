@@ -379,3 +379,43 @@ class TestMobileViewport:
         """TC-043: The <meta name='viewport'> tag is present in the base HTML."""
         response = client.get('/')
         assert b'name="viewport"' in response.data
+
+
+# ===========================================================================
+# TC-057 to TC-062 — Accessibility (automatable portion)
+# ===========================================================================
+
+class TestAccessibility:
+
+    def test_skip_nav_link_present(self, client):
+        """TC-057: A skip navigation link targeting #main-content is the first focusable element."""
+        response = client.get('/')
+        assert b'skip-nav' in response.data
+        assert b'#main-content' in response.data
+
+    def test_search_button_has_aria_label(self, client):
+        """TC-058: The search button has an aria-label for screen readers."""
+        response = client.get('/')
+        assert b'aria-label="Search"' in response.data
+
+    def test_search_form_has_role_search(self, client):
+        """TC-059: The search form carries role='search'."""
+        response = client.get('/')
+        assert b'role="search"' in response.data
+
+    def test_flash_messages_have_role_alert(self, client):
+        """TC-060: Flash message divs carry role='alert'."""
+        with client.session_transaction() as sess:
+            sess['_flashes'] = [('success', 'Test flash message')]
+        response = client.get('/', follow_redirects=True)
+        assert b'role="alert"' in response.data
+
+    def test_html_lang_attribute_present(self, client):
+        """TC-061: The <html> element declares lang='en'."""
+        response = client.get('/')
+        assert b'lang="en"' in response.data
+
+    def test_main_landmark_present(self, client):
+        """TC-062: A <main> landmark element is present in the page."""
+        response = client.get('/')
+        assert b'<main' in response.data
