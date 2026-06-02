@@ -220,6 +220,11 @@ a:hover { text-decoration: underline; }
 .decade-filter-btn:hover { border-color: #4f6ef7; color: #4f6ef7; }
 .decade-filter-btn.active { background: #4f6ef7; color: #fff; border-color: #4f6ef7; }
 
+.lang-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.85rem; }
+.lang-filter-btn { padding: 0.25rem 0.65rem; border-radius: 20px; border: 1px solid #fed7aa; background: #fff; color: #475569; font-size: 0.78rem; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.lang-filter-btn:hover { border-color: #ea580c; color: #ea580c; }
+.lang-filter-btn.active { background: #ea580c; color: #fff; border-color: #ea580c; }
+
 .age-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.85rem; }
 .age-filter-btn { padding: 0.25rem 0.65rem; border-radius: 20px; border: 1px solid #bbf7d0; background: #fff; color: #475569; font-size: 0.78rem; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
 .age-filter-btn:hover { border-color: #16a34a; color: #16a34a; }

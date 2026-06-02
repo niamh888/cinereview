@@ -70,21 +70,30 @@ def trending(page=1):
     return _get('/trending/movie/week', page=page)['results']
 
 
-def discover(genre_id=None, date_gte=None, date_lte=None, cert=None, cert_lte=None, page=1):
-    """Return movies from TMDB discover, filtered by genre, release date, and/or age rating."""
+def discover(genre_id=None, date_range=None, certification=None, language=None, page=1):
+    """Return movies from TMDB discover, filtered by genre, date range, age rating, and/or language.
+
+    date_range: (date_gte, date_lte) tuple of ISO date strings, e.g. ('1990-01-01', '1999-12-31')
+    certification: ('exact', 'G') for a specific rating or ('lte', 'PG-13') for up-to a rating
+    """
     params = {'sort_by': 'popularity.desc', 'page': page}
     if genre_id:
         params['with_genres'] = genre_id
-    if date_gte:
-        params['primary_release_date.gte'] = date_gte
-    if date_lte:
-        params['primary_release_date.lte'] = date_lte
-    if cert or cert_lte:
+    if date_range:
+        date_gte, date_lte = date_range
+        if date_gte:
+            params['primary_release_date.gte'] = date_gte
+        if date_lte:
+            params['primary_release_date.lte'] = date_lte
+    if certification:
         params['certification_country'] = 'US'
-    if cert:
-        params['certification'] = cert
-    if cert_lte:
-        params['certification.lte'] = cert_lte
+        cert_type, cert_value = certification
+        if cert_type == 'exact':
+            params['certification'] = cert_value
+        else:
+            params['certification.lte'] = cert_value
+    if language:
+        params['with_original_language'] = language
     return _get('/discover/movie', **params)['results']
 
 

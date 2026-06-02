@@ -40,6 +40,12 @@
             </button>
             {% endfor %}
         </div>
+        <div class="lang-filters">
+            <button class="lang-filter-btn active" data-lang="" onclick="setLang(this, '')">Any Language</button>
+            {% for code, name in languages.items() %}
+            <button class="lang-filter-btn" data-lang="{{ code }}" onclick="setLang(this, '{{ code }}')">{{ name }}</button>
+            {% endfor %}
+        </div>
         <div id="suggestions-list" class="suggestions-list"></div>
         <div class="suggestions-footer">
             <button class="btn btn-secondary btn-sm" onclick="moreSuggestions()">&#8635; More Suggestions</button>
@@ -135,6 +141,7 @@ let currentPage = 1;
 let currentGenre = '';
 let currentDecade = '';
 let currentAge = '';
+let currentLang = '';
 
 // Resets all filters and fetches page 1
 function loadSuggestions() {
@@ -142,12 +149,15 @@ function loadSuggestions() {
     currentGenre = '';
     currentDecade = '';
     currentAge = '';
+    currentLang = '';
     document.querySelectorAll('.genre-filter-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.decade-filter-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.age-filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.lang-filter-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('.genre-filter-btn[data-genre=""]')?.classList.add('active');
     document.querySelector('.decade-filter-btn[data-decade=""]')?.classList.add('active');
     document.querySelector('.age-filter-btn[data-age=""]')?.classList.add('active');
+    document.querySelector('.lang-filter-btn[data-lang=""]')?.classList.add('active');
     fetchSuggestions();
 }
 
@@ -161,6 +171,7 @@ function fetchSuggestions() {
     if (currentGenre) params.set('genre_id', currentGenre);
     if (currentDecade) params.set('decade', currentDecade);
     if (currentAge) params.set('age_rating', currentAge);
+    if (currentLang) params.set('language', currentLang);
 
     fetch(`/suggestions?${params}`)
         .then(res => res.json())
@@ -218,6 +229,15 @@ function setAge(btn, age) {
     document.querySelectorAll('.age-filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentAge = age;
+    currentPage = 1;
+    fetchSuggestions();
+}
+
+// Switches to a language filter and resets to page 1
+function setLang(btn, lang) {
+    document.querySelectorAll('.lang-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentLang = lang;
     currentPage = 1;
     fetchSuggestions();
 }

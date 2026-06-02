@@ -209,9 +209,19 @@ DECADES = {
 
 # US certification ratings used for child-friendly filtering in the suggestions panel
 AGE_RATINGS = {
-    'little_ones': {'cert':     'G',     'label': 'Little Ones',  'desc': 'G rated'},
-    'kids':        {'cert_lte': 'PG',    'label': 'Kids',         'desc': 'G & PG rated'},
-    'tweens':      {'cert_lte': 'PG-13', 'label': 'Tweens',       'desc': 'up to PG-13'},
+    'little_ones': {'cert':     'G',     'label': 'Little Ones', 'desc': 'G rated'},
+    'kids':        {'cert_lte': 'PG',    'label': 'Kids',        'desc': 'G & PG rated'},
+    'tweens':      {'cert_lte': 'PG-13', 'label': 'Tweens',      'desc': 'up to PG-13'},
+}
+
+LANGUAGES = {
+    'fr': 'French',
+    'it': 'Italian',
+    'es': 'Spanish',
+    'de': 'German',
+    'ko': 'Korean',
+    'ja': 'Japanese',
+    'hi': 'Hindi',
 }
 
 
@@ -249,7 +259,8 @@ def index():
     genres = sorted(tmdb.GENRE_MAP.items(), key=lambda x: x[1])
     return render_template('index.html', movies=movies, category=category,
                            categories=CATEGORIES, watched_ids=watched_ids,
-                           error=error, genres=genres, age_ratings=AGE_RATINGS)
+                           error=error, genres=genres, age_ratings=AGE_RATINGS,
+                           languages=LANGUAGES)
 
 
 @app.route('/search')
@@ -455,23 +466,35 @@ def suggestions():
 
         if decade and decade in DECADES:
             date_gte, date_lte = DECADES[decade]
+        language = request.args.get('language', None)
+        if language and language not in LANGUAGES:
+            language = None
+
+        certification = None
         if age_rating and age_rating in AGE_RATINGS:
             rating_info = AGE_RATINGS[age_rating]
-            cert     = rating_info.get('cert')
-            cert_lte = rating_info.get('cert_lte')
+            if 'cert' in rating_info:
+                certification = ('exact', rating_info['cert'])
+            elif 'cert_lte' in rating_info:
+                certification = ('lte', rating_info['cert_lte'])
 
-        if genre_id or date_gte or cert or cert_lte:
+        date_range = (date_gte, date_lte) if (date_gte or date_lte) else None
+
+        if genre_id or date_range or certification or language:
             picks = tmdb.discover(
-                genre_id=genre_id, date_gte=date_gte, date_lte=date_lte,
-                cert=cert, cert_lte=cert_lte, page=page
+                genre_id=genre_id, date_range=date_range,
+                certification=certification, language=language, page=page
             )
             genre_label  = tmdb.GENRE_MAP.get(genre_id, '') if genre_id else ''
             decade_label = f'the {decade}s' if decade else ''
             age_label    = AGE_RATINGS[age_rating]['label'] if age_rating else ''
+            lang_label   = LANGUAGES.get(language, '') if language else ''
 
             parts = []
             if age_label:
                 parts.append(age_label)
+            if lang_label:
+                parts.append(lang_label)
             if genre_label:
                 parts.append(genre_label)
             reason = 'Popular ' + (' '.join(parts) + ' films' if parts else 'films')

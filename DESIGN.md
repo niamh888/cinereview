@@ -343,7 +343,9 @@ All responsive behaviour is handled with three `@media` breakpoints at the botto
 - Genre filter pills (All Genres + 18 TMDB genres) let the user narrow suggestions by category
 - Decade filter pills (All Eras, 1970s–2020s) let the user filter by release era
 - Genre and decade filters can be combined — e.g. Horror films from the 1990s
-- Age rating filter (green pills) — **Little Ones** (G), **Kids** (G & PG), **Tweens** (up to PG-13) — uses US certifications via the TMDB discover endpoint; all three filters can be combined
+- Age rating filter (green pills) — **Little Ones** (G), **Kids** (G & PG), **Tweens** (up to PG-13) — uses US certifications via the TMDB discover endpoint
+- Language filter (orange pills) — **French, Italian, Spanish, German, Korean, Japanese, Hindi** — filters by original language using TMDB's `with_original_language` parameter
+- All four filters (genre, decade, age, language) are independent and can be combined — e.g. *Popular Kids French films from the 1990s*
 - "More Suggestions" button loads the next page of results from TMDB
 - Already-watched and "No Thanks" films are filtered out server-side before results are returned
 - Dismissible via an × button; hidden with `display: none`
