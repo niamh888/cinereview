@@ -191,6 +191,8 @@ def send_reset_email(user, token):
 
 # ---- Routes ----
 
+LAST_UPDATED = 'June 2026'
+
 CATEGORIES = {
     'now_playing': 'Now Playing',
     'popular':     'Popular',
@@ -724,7 +726,8 @@ def about():
     total_users = User.query.count()
     total_watched = WatchedMovie.query.count()
     return render_template('about.html', total_reviews=total_reviews,
-                           total_users=total_users, total_watched=total_watched)
+                           total_users=total_users, total_watched=total_watched,
+                           last_updated=LAST_UPDATED)
 
 
 with app.app_context():

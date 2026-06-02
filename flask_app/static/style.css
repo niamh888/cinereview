@@ -109,6 +109,7 @@ a:hover { text-decoration: underline; }
 .page-header { margin-bottom: 1.5rem; }
 .page-header h1 { font-size: 1.9rem; font-weight: 700; color: #0f172a; }
 .subtitle { color: #64748b; margin-top: 0.3rem; font-size: 1rem; }
+.page-meta { color: #94a3b8; margin-top: 0.2rem; font-size: 0.82rem; }
 
 /* ---- Flash Messages ---- */
 .flash-container { margin-bottom: 1.5rem; }

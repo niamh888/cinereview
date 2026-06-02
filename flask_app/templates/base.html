@@ -21,14 +21,15 @@
             <ul class="nav-links">
                 <li><a href="{{ url_for('index') }}">Movies</a></li>
                 <li class="nav-hide-sm"><a href="{{ url_for('add_review') }}">Write a Review</a></li>
-                <li><a href="{{ url_for('about') }}">About</a></li>
                 {% if current_user.is_authenticated %}
                     <li><a href="{{ url_for('my_movies') }}">My Movies</a></li>
+                    <li><a href="{{ url_for('about') }}">About</a></li>
                     <li class="nav-user">
                         <span class="nav-username">{{ current_user.username }}</span>
                         <a href="{{ url_for('logout') }}" class="nav-logout">Log out</a>
                     </li>
                 {% else %}
+                    <li><a href="{{ url_for('about') }}">About</a></li>
                     <li><a href="{{ url_for('login') }}">Log in</a></li>
                     <li><a href="{{ url_for('register') }}" class="nav-register">Register</a></li>
                 {% endif %}
