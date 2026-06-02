@@ -25,6 +25,7 @@ They are written in plain language, free of implementation detail.
 | UR-010 | The system shall provide personalised movie suggestions filterable by genre, decade, age rating, and language, with multi-select support |
 | UR-011 | The application shall be usable on mobile devices without loss of core functionality |
 | UR-012 | The system shall protect user data and restrict access to authenticated-only features |
+| UR-013 | The application shall be accessible to users of assistive technologies, conforming to WCAG 2.1 Level AA |
 
 ---
 
@@ -146,6 +147,22 @@ measurable system behaviours.
 | SR-012.2 | Passwords shall be stored as hashed values; the plain-text password shall never be persisted |
 | SR-012.3 | `FLASK_DEBUG` shall not be set in the production environment |
 
+### UR-013 — Accessibility
+
+| ID | Requirement |
+|----|-------------|
+| SR-013.1 | Every page shall include a skip navigation link as the first focusable element, allowing keyboard users to bypass the navbar |
+| SR-013.2 | All icon-only interactive elements shall have an accessible name via `aria-label` |
+| SR-013.3 | The search form shall carry `role="search"` and the input shall have a programmatic label |
+| SR-013.4 | Flash messages shall use `role="alert"` so screen readers announce them immediately |
+| SR-013.5 | Toggle buttons (Watched, No Thanks, filter pills) shall maintain `aria-pressed` to communicate their state to screen readers |
+| SR-013.6 | Dynamic content regions (flash container, suggestions list) shall use `aria-live` so screen readers announce updates |
+| SR-013.7 | All buttons shall display a visible focus ring when focused via keyboard |
+| SR-013.8 | Star ratings displayed in reviews shall provide a text alternative readable by screen readers |
+| SR-013.9 | Links that open in a new tab shall include `rel="noopener noreferrer"` and a screen-reader-visible warning |
+| SR-013.10 | The page shall declare its language via `<html lang="en">` |
+| SR-013.11 | Semantic landmark elements (`<nav>`, `<main>`, `<footer>`, `<section>`) shall be used throughout |
+
 ---
 
 ## 3. Test Cases (TC)
@@ -264,6 +281,25 @@ Each test case maps to one or more software requirements.
 | TC-055 | No Thanks on movie detail excludes from future suggestions | SR-008.1, SR-008.4 | [M] | Return to home; open suggestions; movie absent |
 | TC-056 | Cross-browser: Chrome, Firefox, Safari | All | [M] | Core flows work without visual breakage |
 
+### Accessibility
+
+| TC | Description | SR | Type | Pass Criterion |
+|----|-------------|----|------|----------------|
+| TC-057 | Skip navigation link present in page source | SR-013.1 | [A] | Response HTML contains `class="skip-nav"` and `href="#main-content"` |
+| TC-058 | Search button has accessible name | SR-013.2 | [A] | `aria-label="Search"` present on search button |
+| TC-059 | Search form has `role="search"` | SR-013.3 | [A] | `role="search"` present on nav search form |
+| TC-060 | Flash messages have `role="alert"` | SR-013.4 | [A] | Flash div contains `role="alert"` |
+| TC-061 | `<html>` tag declares language | SR-013.10 | [A] | `lang="en"` present on `<html>` element |
+| TC-062 | `<main>` landmark present | SR-013.11 | [A] | `<main>` element present in page source |
+| TC-063 | Skip link is visible and functional on keyboard focus | SR-013.1 | [M] | Tab once on any page; blue skip link appears; Enter jumps to main content |
+| TC-064 | All buttons have visible focus ring | SR-013.7 | [M] | Tab through page; every button shows indigo outline when focused |
+| TC-065 | Toggle button state announced by screen reader | SR-013.5 | [M] | NVDA/VoiceOver announces "not pressed" / "pressed" on Watched and No Thanks buttons |
+| TC-066 | Suggestions list announced when content loads | SR-013.6 | [M] | Screen reader reads new suggestion titles after panel opens |
+| TC-067 | Star rating read correctly by screen reader | SR-013.8 | [M] | Screen reader announces "Rating: 4 out of 5 stars" not individual star characters |
+| TC-068 | External link warns of new tab | SR-013.9 | [M] | Screen reader announces "(opens in new tab)" on TMDB footer link |
+| TC-069 | Colour contrast passes AA ratio | SR-013.11 | [M] | Run WAVE or axe on any page; no contrast errors reported |
+| TC-070 | Full keyboard navigation — no trapped focus | SR-013.1 | [M] | Navigate entire site using only Tab, Shift+Tab, Enter, Space; every feature reachable |
+
 ---
 
 ## 4. Traceability Matrix
@@ -282,6 +318,7 @@ Each test case maps to one or more software requirements.
 | UR-010 | SR-010.1 – SR-010.8 | TC-036 – TC-042, TC-051 – TC-053 |
 | UR-011 | SR-011.1 – SR-011.5 | TC-043 – TC-047 |
 | UR-012 | SR-012.1 – SR-012.3 | TC-023 – TC-025, TC-048, TC-050 |
+| UR-013 | SR-013.1 – SR-013.11 | TC-057 – TC-070 |
 
 ---
 

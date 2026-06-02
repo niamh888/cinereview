@@ -8,14 +8,17 @@
 </head>
 <body>
 
-    <nav class="navbar">
+    <a href="#main-content" class="skip-nav">Skip to main content</a>
+
+    <nav class="navbar" aria-label="Site navigation">
         <div class="nav-container">
             <a class="nav-brand" href="{{ url_for('index') }}">CineReview</a>
 
-            <form class="nav-search" method="GET" action="{{ url_for('search') }}">
+            <form class="nav-search" method="GET" action="{{ url_for('search') }}" role="search">
                 <input type="text" name="q" placeholder="Search any movie..." autocomplete="off"
+                       aria-label="Search movies"
                        value="{{ request.args.get('q', '') }}">
-                <button type="submit">&#128269;</button>
+                <button type="submit" aria-label="Search">&#128269;</button>
             </form>
 
             <ul class="nav-links">
@@ -37,13 +40,13 @@
         </div>
     </nav>
 
-    <main class="main-content">
+    <main class="main-content" id="main-content">
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="flash-container">
+                <div class="flash-container" aria-live="polite">
                     {% for category, message in messages %}
-                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                        <div class="flash flash-{{ category }}" role="alert">{{ message }}</div>
                     {% endfor %}
                 </div>
             {% endif %}
@@ -54,7 +57,7 @@
     </main>
 
     <footer class="footer">
-        <p>&copy; 2026 CineReview &mdash; Powered by <a href="https://www.themoviedb.org" target="_blank">TMDB</a></p>
+        <p>&copy; 2026 CineReview &mdash; Powered by <a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer">TMDB <span class="sr-only">(opens in new tab)</span></a></p>
     </footer>
 
 </body>

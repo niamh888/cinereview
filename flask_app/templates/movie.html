@@ -49,6 +49,7 @@
                 <button class="btn {% if watched %}btn-watched{% else %}btn-secondary{% endif %}"
                         id="watched-btn"
                         data-movie-id="{{ movie.id }}"
+                        aria-pressed="{{ 'true' if watched else 'false' }}"
                         onclick="toggleWatched(this)">
                     <span id="watched-text">
                         {% if watched %}&#10003; Watched{% else %}Mark as Watched{% endif %}
@@ -57,6 +58,7 @@
                 <button class="btn {% if excluded %}btn-no-thanks{% else %}btn-secondary{% endif %}"
                         id="exclude-btn"
                         data-movie-id="{{ movie.id }}"
+                        aria-pressed="{{ 'true' if excluded else 'false' }}"
                         onclick="toggleExcluded(this)">
                     <span id="exclude-text">
                         {% if excluded %}&#10005; Not for Me{% else %}No Thanks{% endif %}
@@ -102,10 +104,13 @@
             <div class="review-header">
                 <strong class="reviewer-name">{{ review.name }}</strong>
                 <div class="star-rating">
-                    {% for i in range(1, 6) %}
-                        <span class="star {% if i <= review.rating %}filled{% endif %}">&#9733;</span>
-                    {% endfor %}
-                    <span class="rating-text">{{ review.rating }}/5</span>
+                    <span class="sr-only">Rating: {{ review.rating }} out of 5 stars</span>
+                    <span aria-hidden="true">
+                        {% for i in range(1, 6) %}
+                            <span class="star {% if i <= review.rating %}filled{% endif %}">&#9733;</span>
+                        {% endfor %}
+                        <span class="rating-text">{{ review.rating }}/5</span>
+                    </span>
                 </div>
             </div>
             <p class="review-comment">{{ review.comment }}</p>
@@ -133,9 +138,11 @@ function toggleExcluded(btn) {
             if (data.excluded) {
                 text.textContent = '✕ Not for Me';
                 btn.className = btn.className.replace('btn-secondary', 'btn-no-thanks');
+                btn.setAttribute('aria-pressed', 'true');
             } else {
                 text.textContent = 'No Thanks';
                 btn.className = btn.className.replace('btn-no-thanks', 'btn-secondary');
+                btn.setAttribute('aria-pressed', 'false');
             }
             btn.disabled = false;
         });
@@ -152,9 +159,11 @@ function toggleWatched(btn) {
             if (data.watched) {
                 text.textContent = '✓ Watched';
                 btn.classList.replace('btn-secondary', 'btn-watched');
+                btn.setAttribute('aria-pressed', 'true');
             } else {
                 text.textContent = 'Mark as Watched';
                 btn.classList.replace('btn-watched', 'btn-secondary');
+                btn.setAttribute('aria-pressed', 'false');
             }
             btn.disabled = false;
         });
