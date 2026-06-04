@@ -723,6 +723,20 @@ a:hover { text-decoration: underline; }
 /* ---- Responsive ---- */
 
 @media (max-width: 768px) {
+    /* Navbar: search drops to second row, brand + links share first row */
+    .nav-container {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 0.5rem 0;
+        gap: 0.4rem;
+    }
+    .nav-search {
+        order: 3;
+        flex: 0 0 100%;
+        max-width: 100%;
+        padding-bottom: 0.5rem;
+    }
+
     /* Review layout: stack poster above form */
     .review-layout { grid-template-columns: 1fr; }
     .review-poster-col { max-width: 160px; margin: 0 auto; }
@@ -742,21 +756,14 @@ a:hover { text-decoration: underline; }
 }
 
 @media (max-width: 640px) {
-    /* Navbar: wrap to two rows — brand+links on top, search full-width below */
-    .nav-container {
-        flex-wrap: wrap;
-        height: auto;
-        padding: 0.5rem 0;
-        gap: 0.4rem;
-    }
+    /* Navbar: three rows — brand | links | search */
     .nav-brand { flex: 1; }
-    .nav-search {
-        order: 3;
+    .nav-links {
+        order: 2;
         flex: 0 0 100%;
-        max-width: 100%;
-        padding-bottom: 0.5rem;
+        flex-wrap: wrap;
+        gap: 0.6rem;
     }
-    .nav-links { gap: 0.6rem; }
     .nav-links a { font-size: 0.82rem; }
 
     /* Main content */
