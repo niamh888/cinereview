@@ -10,6 +10,7 @@ import json
 import pytest
 from app import db, User, WatchedMovie, ExcludedMovie, Review
 from tests.conftest import register_user, MOCK_MOVIE
+from utils import generate_reset_token
 
 
 # ===========================================================================
@@ -499,3 +500,93 @@ class TestAccessibility:
         """TC-062: A <main> landmark element is present in the page."""
         response = client.get('/')
         assert b'<main' in response.data
+
+
+# ===========================================================================
+# TC-063 to TC-067 — Forgot password
+# ===========================================================================
+
+class TestForgotPassword:
+
+    def test_forgot_password_page_returns_200(self, client):
+        """TC-063: GET /forgot-password returns HTTP 200."""
+        response = client.get('/forgot-password')
+        assert response.status_code == 200
+
+    def test_valid_email_shows_confirmation(self, client, test_user):
+        """TC-064: POST with a registered email shows the reset-link confirmation message."""
+        response = client.post('/forgot-password', data={'email': 'test@example.com'},
+                               follow_redirects=True)
+        assert response.status_code == 200
+        assert b'reset link has been sent' in response.data
+
+    def test_unknown_email_still_shows_confirmation(self, client):
+        """TC-065: POST with an unregistered email shows the same confirmation (prevents user enumeration)."""
+        response = client.post('/forgot-password', data={'email': 'nobody@example.com'},
+                               follow_redirects=True)
+        assert response.status_code == 200
+        assert b'reset link has been sent' in response.data
+
+    def test_empty_email_shows_error(self, client):
+        """TC-066: POST with an empty email returns a validation error."""
+        response = client.post('/forgot-password', data={'email': ''})
+        assert response.status_code == 200
+        assert b'required' in response.data.lower()
+
+    def test_malformed_email_shows_error(self, client):
+        """TC-067: POST with a malformed email string returns a validation error."""
+        response = client.post('/forgot-password', data={'email': 'notanemail'})
+        assert response.status_code == 200
+        assert b'valid email' in response.data.lower()
+
+
+# ===========================================================================
+# TC-068 to TC-072 — Reset password
+# ===========================================================================
+
+class TestResetPassword:
+
+    def test_valid_token_shows_reset_form(self, client, app, test_user):
+        """TC-068: GET /reset-password/<valid_token> returns 200 and renders the new-password form."""
+        token = generate_reset_token(test_user.email)
+        response = client.get(f'/reset-password/{token}')
+        assert response.status_code == 200
+        assert b'Set a New Password' in response.data
+
+    def test_invalid_token_redirects_to_forgot_password(self, client):
+        """TC-069: GET /reset-password/<garbage> redirects to /forgot-password."""
+        response = client.get('/reset-password/this-is-not-a-valid-token')
+        assert response.status_code == 302
+        assert 'forgot-password' in response.headers['Location']
+
+    def test_valid_token_updates_password(self, client, app, test_user):
+        """TC-070: POST with a valid token and matching strong passwords saves the new password."""
+        token = generate_reset_token(test_user.email)
+        response = client.post(f'/reset-password/{token}', data={
+            'password':         'NewPass@9999!',
+            'confirm_password': 'NewPass@9999!',
+        }, follow_redirects=True)
+        assert response.status_code == 200
+        assert b'password has been updated' in response.data
+        user = User.query.filter_by(email='test@example.com').first()
+        assert user.check_password('NewPass@9999!')
+
+    def test_mismatched_passwords_shows_error(self, client, app, test_user):
+        """TC-071: POST with a valid token but mismatched passwords returns a validation error."""
+        token = generate_reset_token(test_user.email)
+        response = client.post(f'/reset-password/{token}', data={
+            'password':         'NewPass@9999!',
+            'confirm_password': 'Different@1111!',
+        })
+        assert response.status_code == 200
+        assert b'do not match' in response.data
+
+    def test_weak_password_shows_error(self, client, app, test_user):
+        """TC-072: POST with a valid token but a weak password returns a strength error."""
+        token = generate_reset_token(test_user.email)
+        response = client.post(f'/reset-password/{token}', data={
+            'password':         'weak',
+            'confirm_password': 'weak',
+        })
+        assert response.status_code == 200
+        assert b'Password must include' in response.data

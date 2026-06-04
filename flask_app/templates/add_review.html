@@ -14,7 +14,17 @@
     <a href="{{ url_for('index') }}" class="btn btn-primary" style="margin-top: 1rem;">Browse Movies</a>
 </div>
 {% else %}
-<div class="form-container">
+<div class="review-layout">
+
+    {% if poster_path %}
+    <div class="review-poster-col">
+        <img src="{{ poster_url(poster_path, 'w342') }}"
+             alt="{{ form_data.movie_title }} poster"
+             class="review-poster-img">
+    </div>
+    {% endif %}
+
+    <div class="form-container">
     <form method="POST" action="{{ url_for('add_review') }}?movie_id={{ form_data.movie_id }}" novalidate>
 
         <input type="hidden" name="movie_id" value="{{ form_data.movie_id }}">
@@ -66,6 +76,8 @@
         </div>
 
     </form>
+    </div>
+
 </div>
 {% endif %}
 {% endblock %}

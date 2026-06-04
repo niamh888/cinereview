@@ -564,6 +564,21 @@ a:hover { text-decoration: underline; }
 /* ---- Forms ---- */
 .form-container { max-width: 560px; }
 
+.review-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.review-poster-img {
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    position: sticky;
+    top: 1.5rem;
+}
+
 .form-group { margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem; }
 
 .form-group label { font-size: 0.9rem; font-weight: 600; color: #334155; }
@@ -708,6 +723,10 @@ a:hover { text-decoration: underline; }
 /* ---- Responsive ---- */
 
 @media (max-width: 768px) {
+    /* Review layout: stack poster above form */
+    .review-layout { grid-template-columns: 1fr; }
+    .review-poster-col { max-width: 160px; margin: 0 auto; }
+
     /* Movie hero: stack poster above info */
     .movie-hero {
         grid-template-columns: 1fr;
