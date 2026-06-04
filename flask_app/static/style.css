@@ -459,7 +459,7 @@ a:hover { text-decoration: underline; }
 .hero-meta { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 
 .tmdb-rating { display: flex; align-items: baseline; gap: 0.3rem; }
-.rating-star { color: #f59e0b; font-size: 1.4rem; }
+.rating-label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; align-self: center; }
 .rating-number { font-size: 2rem; font-weight: 700; color: #0f172a; }
 .rating-denom { color: #94a3b8; font-size: 0.85rem; }
 

@@ -100,7 +100,7 @@
                     <span class="tag">{{ gnames[0] }}</span>
                 {% endif %}
                 <span class="year">{{ movie.release_date[:4] if movie.release_date else '—' }}</span>
-                <span class="rating-badge">&#9733; {{ '%.1f' % movie.vote_average }}</span>
+                <span class="rating-badge">TMDB {{ '%.1f' % movie.vote_average }}</span>
             </div>
             <div class="card-actions">
                 <a href="{{ url_for('movie_detail', movie_id=movie.id) }}"
@@ -212,7 +212,7 @@ function fetchSuggestions() {
                             <div class="suggestion-meta">
                                 ${m.genre ? `<span class="tag">${m.genre}</span>` : ''}
                                 <span class="year">${m.year}</span>
-                                <span class="rating-badge">&#9733; ${m.rating}</span>
+                                <span class="rating-badge">TMDB ${m.rating}</span>
                             </div>
                         </div>
                     </a>`).join('')
