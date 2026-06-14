@@ -1,5 +1,6 @@
 import os
 
+import sqlalchemy as sa
 from flask import Flask
 
 from config import configure_app
@@ -24,6 +25,15 @@ register_routes(app)
 
 with app.app_context():
     db.create_all()
+    # Add user_id to review table if it doesn't exist yet (safe to run on every startup)
+    with db.engine.connect() as _conn:
+        try:
+            _conn.execute(sa.text(
+                'ALTER TABLE review ADD COLUMN user_id INTEGER REFERENCES "user"(id)'
+            ))
+            _conn.commit()
+        except Exception:
+            _conn.rollback()
 
 if __name__ == '__main__':
     app.run(debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true')

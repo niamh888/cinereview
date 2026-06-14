@@ -422,7 +422,8 @@ a:hover { text-decoration: underline; }
 .btn:focus-visible { outline: 3px solid #4f6ef7; outline-offset: 2px; }
 .btn-primary { background: #4f6ef7; color: #fff; }
 .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-.btn-watched { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+.btn-watched  { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+.btn-reviewed { background: #eef2ff; color: #4338ca; border: 1px solid #a5b4fc; }
 .btn-no-thanks { background: #fff1f2; color: #991b1b; border: 1px solid #fca5a5; }
 .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
 

@@ -132,6 +132,7 @@ def register_routes(app):
 
         watched = False
         excluded = False
+        user_reviewed = False
         if current_user.is_authenticated:
             watched = WatchedMovie.query.filter_by(
                 user_id=current_user.id, movie_id=movie_id
@@ -139,9 +140,13 @@ def register_routes(app):
             excluded = ExcludedMovie.query.filter_by(
                 user_id=current_user.id, movie_id=movie_id
             ).first() is not None
+            user_reviewed = Review.query.filter_by(
+                movie_id=movie_id, user_id=current_user.id
+            ).first() is not None
 
         return render_template('movie.html', movie=film, cast=cast, director=director,
-                               reviews=movie_reviews, watched=watched, excluded=excluded)
+                               reviews=movie_reviews, watched=watched, excluded=excluded,
+                               user_reviewed=user_reviewed)
 
     @app.route('/toggle-watched/<int:movie_id>', methods=['POST'])
     @login_required
@@ -264,6 +269,7 @@ def register_routes(app):
             if not errors:
                 db.session.add(Review(
                     movie_id=int(movie_id_raw),
+                    user_id=current_user.id if current_user.is_authenticated else None,
                     name=name,
                     rating=int(rating_raw),
                     comment=comment,

@@ -67,9 +67,15 @@
             {% else %}
                 <a href="{{ url_for('login') }}" class="btn btn-secondary">Log in to track watched</a>
             {% endif %}
-            <a href="{{ url_for('add_review', movie_id=movie.id) }}" class="btn btn-primary">
-                Write a Review
-            </a>
+            {% if user_reviewed %}
+                <a href="{{ url_for('add_review', movie_id=movie.id) }}" class="btn btn-reviewed">
+                    &#10003; Reviewed
+                </a>
+            {% else %}
+                <a href="{{ url_for('add_review', movie_id=movie.id) }}" class="btn btn-primary">
+                    Write a Review
+                </a>
+            {% endif %}
         </div>
     </div>
 </div>
