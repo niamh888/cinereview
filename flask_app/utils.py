@@ -72,6 +72,28 @@ def verify_reset_token(token, max_age=3600):
     return email
 
 
+def send_feedback_email(name, rating, comment):
+    """Forward a CineReview feedback submission to the site owner's inbox."""
+    stars = '★' * int(rating) + '☆' * (5 - int(rating))
+    try:
+        msg = Message(
+            subject=f'CineReview Feedback — {stars} ({rating}/5)',
+            sender=current_app.config['MAIL_USERNAME'],
+            recipients=['niamh@stjohnlynch.com'],
+            body=(
+                f"New feedback submitted on CineReview:\n\n"
+                f"Name:   {name}\n"
+                f"Rating: {rating}/5  {stars}\n\n"
+                f"Comment:\n{comment}\n"
+            ),
+        )
+        mail.send(msg)
+        return True
+    except Exception:
+        print(f'\n[DEV] Feedback from {name}: {rating}/5 — {comment}\n')
+        return False
+
+
 def send_reset_email(user, token):
     """Email a password reset link to the user; falls back to printing it in the console if mail fails."""
     reset_url = url_for('reset_password', token=token, _external=True)

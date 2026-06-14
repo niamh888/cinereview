@@ -715,6 +715,42 @@ a:hover { text-decoration: underline; }
 .about-list li { color: #475569; font-size: 0.95rem; padding-left: 1rem; position: relative; }
 .about-list li::before { content: "›"; position: absolute; left: 0; color: #4f6ef7; }
 
+/* ---- Feedback card ---- */
+.feedback-thanks {
+    color: #166534;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    font-size: 0.95rem;
+}
+
+.star-rating-input {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 0.15rem;
+    margin-top: 0.25rem;
+}
+
+.star-rating-input input { display: none; }
+
+.star-rating-input label {
+    font-size: 2rem;
+    color: #e2e8f0;
+    cursor: pointer;
+    transition: color 0.1s;
+    line-height: 1;
+}
+
+/* Checked: colour selected star and all lower-value stars (DOM siblings after it) */
+.star-rating-input input:checked ~ label { color: #f59e0b; }
+
+/* Hover: preview rating */
+.star-rating-input:hover label { color: #e2e8f0; }
+.star-rating-input label:hover,
+.star-rating-input label:hover ~ label { color: #fbbf24; }
+
 /* ---- 404 ---- */
 .error-page { text-align: center; padding: 5rem 1rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
 .error-page h1 { font-size: 6rem; color: #e2e8f0; font-weight: 800; }

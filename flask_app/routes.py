@@ -6,6 +6,7 @@ from models import User, WatchedMovie, ExcludedMovie, Review, MovieCache
 from utils import (
     cache_movie, check_password_strength, make_captcha,
     generate_reset_token, verify_reset_token, send_reset_email,
+    send_feedback_email,
 )
 import tmdb
 
@@ -550,12 +551,47 @@ def register_routes(app):
 
         return render_template('reset_password.html', errors=errors, token=token)
 
-    @app.route('/about')
+    @app.route('/about', methods=['GET', 'POST'])
     def about():
-        """Pass site-wide stats (review count, user count, watched count) to the about page."""
+        """Pass site-wide stats to the about page and handle the feedback form submission."""
+        feedback_errors = {}
+        feedback_sent = False
+        feedback_data = {}
+
+        if request.method == 'POST':
+            name = request.form.get('feedback_name', '').strip()
+            rating = request.form.get('feedback_rating', '').strip()
+            comment = request.form.get('feedback_comment', '').strip()
+            feedback_data = {'feedback_name': name, 'feedback_rating': rating,
+                             'feedback_comment': comment}
+
+            if not name:
+                feedback_errors['feedback_name'] = 'Your name is required.'
+            if not rating:
+                feedback_errors['feedback_rating'] = 'Please select a star rating.'
+            else:
+                try:
+                    r = int(rating)
+                    if not 1 <= r <= 5:
+                        feedback_errors['feedback_rating'] = 'Rating must be between 1 and 5.'
+                except ValueError:
+                    feedback_errors['feedback_rating'] = 'Invalid rating.'
+            if not comment:
+                feedback_errors['feedback_comment'] = 'Please write a comment.'
+            elif len(comment) < 5:
+                feedback_errors['feedback_comment'] = 'Comment is too short.'
+
+            if not feedback_errors:
+                send_feedback_email(name, rating, comment)
+                feedback_sent = True
+                feedback_data = {}
+
         total_reviews = Review.query.count()
         total_users = User.query.count()
         total_watched = WatchedMovie.query.count()
         return render_template('about.html', total_reviews=total_reviews,
                                total_users=total_users, total_watched=total_watched,
-                               last_updated=LAST_UPDATED)
+                               last_updated=LAST_UPDATED,
+                               feedback_errors=feedback_errors,
+                               feedback_sent=feedback_sent,
+                               feedback_data=feedback_data)
