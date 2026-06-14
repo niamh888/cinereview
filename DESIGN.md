@@ -78,7 +78,7 @@ If a route is ever renamed or restructured, only the decorator changes — every
 
 ### Routes in this project
 
-This project registers 11 routes in `app.py`:
+This project registers 14 routes in `routes.py`:
 
 | URL | Function | Methods |
 |---|---|---|
@@ -95,7 +95,7 @@ This project registers 11 routes in `app.py`:
 | `/logout` | `logout` | GET |
 | `/forgot-password` | `forgot_password` | GET, POST |
 | `/reset-password/<token>` | `reset_password` | GET, POST |
-| `/about` | `about` | GET |
+| `/about` | `about` | GET, POST |
 
 Routes that require a logged-in user are protected with the `@login_required` decorator, which stacks on top of `@app.route()`. Flask processes decorators from the inside out — the route is registered first, then the login check wraps it.
 
@@ -279,6 +279,8 @@ The `int:` converter means `/movie/abc` or `/movie/3.5` will never reach the fun
 | Cast photo grid | `repeat(auto-fill, minmax(100px, 1fr))`, gap `0.75rem` |
 | Movie detail hero | `260px 1fr` (poster + info), gap `2rem` |
 | About stats | `repeat(3, 1fr)`, gap `1rem` |
+| About cards | `repeat(2, 1fr)`, gap `1.5rem` — single column below `900px` |
+| Review picker | `repeat(auto-fill, minmax(140px, 1fr))`, gap `1rem` |
 
 ---
 
@@ -290,6 +292,7 @@ All responsive behaviour is handled with three `@media` breakpoints at the botto
 
 | Breakpoint | Targets |
 |---|---|
+| `min-width: 900px` | About cards grid switches from 1 column to 2 columns |
 | `max-width: 768px` | Tablet and below |
 | `max-width: 640px` | Phone |
 | `max-width: 480px` | Small phone |
@@ -333,7 +336,7 @@ All responsive behaviour is handled with three `@media` breakpoints at the botto
 ### Movie Detail Hero
 - Two-column grid: large poster on the left, film info on the right
 - Info includes: title, tagline, year/runtime/genres, TMDB star rating (amber star + large number), overview, director, action buttons
-- Action buttons: **Mark as Watched** (green-tinted when active), **No Thanks** (red-tinted when active, toggleable), **Write a Review**
+- Action buttons: **Mark as Watched** (green-tinted when active), **No Thanks** (red-tinted when active, toggleable), **Write a Review** — changes to **✓ Reviewed** (muted indigo, `.btn-reviewed`) once the logged-in user has submitted a review for this film
 - **No Thanks** marks the film as excluded — hidden from the home grid and filtered out of suggestions; clicking again un-excludes it
 - White card with `border-radius: 14px`
 
@@ -344,7 +347,7 @@ All responsive behaviour is handled with three `@media` breakpoints at the botto
   - **Genre** (indigo pills) — All Genres + 18 TMDB genres, e.g. Action, Comedy, Horror
   - **Decade** (indigo-light pills) — All Eras, 1970s–2020s; multiple decades use the bounding date range (e.g. 1990s + 2010s → 1990–2019)
   - **Age Rating** (green pills) — Little Ones (G), Kids (G & PG), Tweens (up to PG-13); uses US certifications; multiple selections take the most permissive rating
-  - **Language** (orange pills) — French, Italian, Spanish, German, Korean, Japanese, Hindi; multiple languages use TMDB's OR syntax (`fr|it`)
+  - **Origin** (orange pills) — French, Italian, Spanish, German, Korean, Japanese, Hindi; multiple selections use TMDB's OR syntax (`fr|it`); filter is named **All Origins** when no origin is selected
 - All four filters can be combined — e.g. *Popular Kids French, Italian films from the 1990s & 2010s*
 - "More Suggestions" button pages through further results without repeating
 - Already-watched and "No Thanks" films are filtered out server-side before results are returned
@@ -357,6 +360,7 @@ All responsive behaviour is handled with three `@media` breakpoints at the botto
 | `.btn-primary` | Indigo `#4f6ef7`, white text |
 | `.btn-secondary` | Light grey `#f1f5f9`, slate text, grey border |
 | `.btn-watched` | Green-tinted `#f0fdf4`, dark green text, green border |
+| `.btn-reviewed` | Indigo-tinted `#eef2ff`, dark indigo `#4338ca` text, indigo border `#a5b4fc` — shown when the logged-in user has already reviewed this film |
 | All buttons | `border-radius: 6px`, slight lift on hover (`translateY(-1px)`) |
 
 ### Tabs (Category Filter)
@@ -866,12 +870,17 @@ The project separates responsibilities across files so each file has one clear p
 
 | File | Responsibility |
 |---|---|
-| `app.py` | Flask routes, database models, validation helpers |
+| `app.py` | Application factory — creates the Flask app and runs startup schema migrations |
+| `config.py` | Environment-based configuration (database URL, mail settings, secret key) |
+| `extensions.py` | Flask extension instances (`db`, `mail`, `login_manager`) initialised once and imported elsewhere |
+| `models.py` | SQLAlchemy database models (`User`, `Review`, `WatchedMovie`, `ExcludedMovie`, `MovieCache`) |
+| `routes.py` | All URL routes and view functions |
+| `utils.py` | Helper functions — email sending, password validation, CAPTCHA, tokens, feedback email |
 | `tmdb.py` | All TMDB API calls — no route logic lives here |
 | `templates/` | HTML presentation only — no business logic |
 | `static/style.css` | All styling in one file, grouped by component |
 
-This means changes to the TMDB API only ever touch `tmdb.py`; changes to how a page looks only ever touch a template or `style.css`. Neither file needs to know anything about the other.
+This separation means changes to the TMDB API only ever touch `tmdb.py`; changes to how a page looks only ever touch a template or `style.css`; database model changes only touch `models.py`. No file needs to know the internals of another.
 
 ---
 
@@ -1077,7 +1086,7 @@ Manual testing relies on a person remembering to check every feature after every
 | File | Purpose |
 |---|---|
 | `tests/conftest.py` | Shared fixtures — test database, mock TMDB, login helper, report hooks |
-| `tests/test_routes.py` | 65 test cases across 10 feature areas |
+| `tests/test_routes.py` | 75 test cases across 12 feature areas |
 | `requirements-dev.txt` | Development dependencies (pytest + pytest-html) |
 | `pytest.ini` | Tells pytest where to find tests and how to configure them |
 | `REQUIREMENTS.md` | Full requirements traceability matrix (UR → SR → TC) |
@@ -1111,7 +1120,7 @@ pip install -r requirements-dev.txt
 python -m pytest tests/ -v
 ```
 
-Expected output: `65 passed` with no warnings.
+Expected output: `75 passed` with no warnings.
 
 #### Requirements traceability
 
@@ -1136,8 +1145,8 @@ Three artefacts are generated in `flask_app/test-reports/` on every run:
 The history log references the anomaly filename on failure, providing complete traceability between run record and deviation detail:
 
 ```
-2026-06-02 11:37:17 | FAIL | 64/65 passed | 1 FAILED | See: anomaly_2026-06-02_11-37-17.txt
-2026-06-02 11:39:48 | PASS | 65/65 passed
+2026-06-02 11:37:17 | FAIL | 74/75 passed | 1 FAILED | See: anomaly_2026-06-02_11-37-17.txt
+2026-06-02 11:39:48 | PASS | 75/75 passed
 ```
 
 This mirrors the anomaly and deviation management processes used in regulated software development (ISO 62304 §9 — Software Problem Resolution).

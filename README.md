@@ -34,7 +34,12 @@ CineReview was built to solve exactly that: a simple way to log the movies you'v
 ```
 cinereview/
 ├── flask_app/
-│   ├── app.py            # Main Flask application — routes, models, and helper functions
+│   ├── app.py            # Application factory — wires Flask, extensions, and startup migrations
+│   ├── config.py         # Environment-based configuration (database URL, mail, secret key)
+│   ├── extensions.py     # Flask extension instances (db, mail, login_manager)
+│   ├── models.py         # SQLAlchemy database models (User, Review, WatchedMovie, etc.)
+│   ├── routes.py         # All URL routes and view functions
+│   ├── utils.py          # Helper functions (email sending, password validation, CAPTCHA, tokens)
 │   ├── tmdb.py           # Wrapper functions for the TMDB API
 │   ├── requirements.txt  # Python dependencies
 │   ├── Procfile          # Tells Render how to start the app in production
@@ -184,7 +189,7 @@ python -m pytest tests/ -v
 tests/test_routes.py::TestPublicRoutes::test_home_page_returns_200 PASSED
 tests/test_routes.py::TestRegistration::test_valid_registration_creates_user PASSED
 ...
-65 passed in 7.55s
+75 passed in 7.55s
 ```
 
 ### What the tests cover
@@ -202,6 +207,8 @@ tests/test_routes.py::TestRegistration::test_valid_registration_creates_user PAS
 | Mobile (viewport meta tag) | 1 |
 | Page content verification (key elements on every page) | 14 |
 | Accessibility (WCAG 2.1 AA — skip nav, ARIA, landmarks) | 6 |
+| Forgot password (form, email dispatch, rate limiting) | 5 |
+| Reset password (valid token, expired token, password rules) | 5 |
 
 ### Test reports — generated automatically on every run
 
@@ -216,8 +223,8 @@ Three artefacts are written to `flask_app/test-reports/` after every run:
 The history log references the anomaly filename when failures occur, providing complete traceability:
 
 ```
-2026-06-02 11:37:17 | FAIL | 64/65 passed | 1 FAILED | See: anomaly_2026-06-02_11-37-17.txt
-2026-06-02 11:39:48 | PASS | 65/65 passed
+2026-06-02 11:37:17 | FAIL | 74/75 passed | 1 FAILED | See: anomaly_2026-06-02_11-37-17.txt
+2026-06-02 11:39:48 | PASS | 75/75 passed
 ```
 
 > `test-reports/` is listed in `.gitignore` and is never committed to the repository.
