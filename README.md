@@ -22,7 +22,7 @@ CineReview was built to solve exactly that: a simple way to log the movies you'v
 - Filter suggestions by **genre**, **decade** (1970s–2020s), **age rating** (Little Ones / Kids / Tweens), and **origin** (French, Italian, Spanish, German, Korean, Japanese, Hindi) — all filters support multiple selections and can be combined
 - Page through more suggestions without repeating films already watched or excluded
 - Mark movies as **No Thanks** on the detail page to permanently hide them from the grid and suggestions
-- **Reviewed** button on each film page — changes to a muted indigo state once a logged-in user has submitted a review, preventing accidental duplicates
+- **Reviewed** button on the film detail page and My Movies page — changes appearance once a logged-in user has submitted a review (indigo on detail page, green on My Movies), preventing accidental duplicates
 - Write a Review page shows up to 4 recently watched **unreviewed** films as a quick-pick grid; guests see a prompt to create an account
 - **Rate This App** feedback card on the About page — star rating + comment sent directly to the site owner by email
 - User accounts with registration, login, and password reset by email

@@ -332,6 +332,7 @@ All responsive behaviour is handled with three `@media` breakpoints at the botto
 - Poster image fills top (2:3 aspect ratio), scales slightly on hover
 - **Watched state**: green border (`#86efac`), poster dimmed to 45% brightness, "Watched" overlay badge on the image
 - Card body: title, year, genre tag, TMDB rating badge, action buttons (Details / Review)
+- **Reviewed state** (My Movies page): Review button changes to "✓ Reviewed" with `.btn-watched` green styling when the logged-in user has already reviewed that film
 
 ### Movie Detail Hero
 - Two-column grid: large poster on the left, film info on the right
