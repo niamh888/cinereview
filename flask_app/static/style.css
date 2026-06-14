@@ -669,7 +669,19 @@ a:hover { text-decoration: underline; }
 .strength-checklist li.passed::before { content: "✓"; color: #16a34a; }
 
 /* ---- About Page ---- */
-.about-container { max-width: 700px; display: flex; flex-direction: column; gap: 1.5rem; }
+.about-container { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.about-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+@media (min-width: 900px) {
+    .about-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
 
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
 

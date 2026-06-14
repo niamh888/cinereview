@@ -14,7 +14,7 @@ CineReview was built to solve exactly that: a simple way to log the movies you'v
 
 ## Features
 
-- Browse movies by category: Now Playing, Popular, Top Rated, Upcoming
+- Browse movies by category: Now Playing, Popular, Top Rated, Upcoming and audit
 - Search for any film via TMDB
 - Read and write reviews (1–5 star rating + comment)
 - Mark movies as watched and view your personal watched list
