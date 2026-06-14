@@ -275,8 +275,20 @@ def register_routes(app):
         if not form_data.get('name') and current_user.is_authenticated:
             form_data['name'] = current_user.username
 
+        recent_watched = []
+        if not movie_id_param and current_user.is_authenticated:
+            entries = WatchedMovie.query.filter_by(
+                user_id=current_user.id
+            ).order_by(WatchedMovie.watched_at.desc()).limit(4).all()
+            for entry in entries:
+                cached = db.session.get(MovieCache, entry.movie_id)
+                if not cached:
+                    cached = cache_movie(entry.movie_id)
+                if cached:
+                    recent_watched.append(cached)
+
         return render_template('add_review.html', errors=errors, form_data=form_data,
-                               poster_path=poster_path)
+                               poster_path=poster_path, recent_watched=recent_watched)
 
     @app.route('/suggestions')
     def suggestions():

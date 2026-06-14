@@ -41,7 +41,7 @@
             {% endfor %}
         </div>
         <div class="lang-filters">
-            <button class="lang-filter-btn active" data-lang="" onclick="setLang(this, '')">Any Language</button>
+            <button class="lang-filter-btn active" data-lang="" onclick="setLang(this, '')">All Origins</button>
             {% for code, name in languages.items() %}
             <button class="lang-filter-btn" data-lang="{{ code }}" onclick="setLang(this, '{{ code }}')">{{ name }}</button>
             {% endfor %}

@@ -9,10 +9,68 @@
 </div>
 
 {% if not form_data.movie_id %}
-<div class="empty-state">
-    <p>No film selected. Find a movie first, then click <strong>Review</strong>.</p>
-    <a href="{{ url_for('index') }}" class="btn btn-primary" style="margin-top: 1rem;">Browse Movies</a>
-</div>
+
+    {# ---- Guest prompt modal ---- #}
+    {% if not current_user.is_authenticated %}
+    <div id="login-prompt" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-box">
+            <button class="modal-close" onclick="document.getElementById('login-prompt').style.display='none'"
+                    aria-label="Close">&times;</button>
+            <h2 id="modal-title">You'll get more out of CineReview with an account</h2>
+            <p>Create a free account to track the films you've watched and have your name filled in automatically when writing a review.</p>
+            <div class="modal-actions">
+                <a href="{{ url_for('register') }}" class="btn btn-primary">Create free account</a>
+                <a href="{{ url_for('login') }}" class="btn btn-secondary">Log in</a>
+            </div>
+            <button class="modal-skip"
+                    onclick="document.getElementById('login-prompt').style.display='none'">
+                Continue as guest
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ---- Logged-in: recently watched picker ---- #}
+    {% if current_user.is_authenticated and recent_watched %}
+    <div class="review-picker">
+        <h2>Pick a film to review</h2>
+        <p class="subtitle">Your most recently watched films</p>
+        <div class="review-picker-grid">
+            {% for movie in recent_watched %}
+            <a href="{{ url_for('add_review') }}?movie_id={{ movie.tmdb_id }}" class="review-pick-card">
+                {% if movie.poster_path %}
+                <img src="{{ poster_url(movie.poster_path, 'w200') }}" alt="{{ movie.title }} poster">
+                {% else %}
+                <div class="no-poster">{{ movie.title }}</div>
+                {% endif %}
+                <div class="review-pick-info">
+                    <div class="review-pick-title">{{ movie.title }}</div>
+                    {% if movie.year %}<div class="review-pick-year">{{ movie.year }}</div>{% endif %}
+                </div>
+                <span class="review-pick-cta">Review this film &rsaquo;</span>
+            </a>
+            {% endfor %}
+        </div>
+        <p class="review-picker-alt">
+            Or <a href="{{ url_for('index') }}">browse all movies</a> to find a different film.
+        </p>
+    </div>
+
+    {# ---- Logged-in but no watched movies yet ---- #}
+    {% else %}
+    <div class="empty-state">
+        {% if current_user.is_authenticated %}
+        <p>You haven't marked any films as watched yet.</p>
+        <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #94a3b8;">
+            Browse movies, click <strong>Mark as Watched</strong>, then come back here to write your review.
+        </p>
+        {% else %}
+        <p>No film selected. Find a movie first, then click <strong>Review</strong>.</p>
+        {% endif %}
+        <a href="{{ url_for('index') }}" class="btn btn-primary" style="margin-top: 1rem;">Browse Movies</a>
+    </div>
+    {% endif %}
+
 {% else %}
 <div class="review-layout">
 
