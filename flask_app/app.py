@@ -34,6 +34,17 @@ with app.app_context():
             _conn.commit()
         except Exception:
             _conn.rollback()
+    # Backfill user_id on reviews submitted before the column existed
+    with db.engine.connect() as _conn:
+        try:
+            _conn.execute(sa.text(
+                'UPDATE review SET user_id = '
+                '(SELECT id FROM "user" WHERE username = review.name) '
+                'WHERE user_id IS NULL'
+            ))
+            _conn.commit()
+        except Exception:
+            _conn.rollback()
 
 if __name__ == '__main__':
     app.run(debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true')
