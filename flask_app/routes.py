@@ -193,7 +193,11 @@ def register_routes(app):
             if cached:
                 watched_movies.append(cached)
 
-        return render_template('my_movies.html', watched_movies=watched_movies)
+        reviewed_ids = {
+            r.movie_id for r in Review.query.filter_by(user_id=current_user.id).all()
+        }
+
+        return render_template('my_movies.html', watched_movies=watched_movies, reviewed_ids=reviewed_ids)
 
     @app.route('/add-review', methods=['GET', 'POST'])
     def add_review():

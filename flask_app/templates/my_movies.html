@@ -44,8 +44,13 @@
             <div class="card-actions">
                 <a href="{{ url_for('movie_detail', movie_id=movie.tmdb_id) }}"
                    class="btn btn-secondary btn-sm">Details</a>
+                {% if movie.tmdb_id in reviewed_ids %}
+                <a href="{{ url_for('add_review', movie_id=movie.tmdb_id) }}"
+                   class="btn btn-watched btn-sm">&#10003; Reviewed</a>
+                {% else %}
                 <a href="{{ url_for('add_review', movie_id=movie.tmdb_id) }}"
                    class="btn btn-primary btn-sm">Review</a>
+                {% endif %}
             </div>
         </div>
     </div>
