@@ -56,10 +56,15 @@
         </p>
     </div>
 
-    {# ---- Logged-in but no watched movies yet ---- #}
+    {# ---- Logged-in: no unreviewed watched movies ---- #}
     {% else %}
     <div class="empty-state">
-        {% if current_user.is_authenticated %}
+        {% if all_reviewed %}
+        <p>You've already reviewed all your watched films — nice work!</p>
+        <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #94a3b8;">
+            Watch something new, then come back to review it.
+        </p>
+        {% elif current_user.is_authenticated %}
         <p>You haven't marked any films as watched yet.</p>
         <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #94a3b8;">
             Browse movies, click <strong>Mark as Watched</strong>, then come back here to write your review.

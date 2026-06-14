@@ -218,6 +218,14 @@ def register_routes(app):
 
         form_data = {'movie_id': movie_id_param, 'movie_title': movie_title}
 
+        if movie_id_param and current_user.is_authenticated:
+            already = Review.query.filter_by(
+                movie_id=int(movie_id_param), user_id=current_user.id
+            ).first()
+            if already:
+                flash('You have already reviewed this film.', 'error')
+                return redirect(url_for('movie_detail', movie_id=int(movie_id_param)))
+
         if request.method == 'POST':
             name = request.form.get('name', '').strip()
             movie_id_raw = request.form.get('movie_id', '').strip()
@@ -267,6 +275,11 @@ def register_routes(app):
                 errors['comment'] = 'Comment must be at least 10 characters.'
 
             if not errors:
+                if current_user.is_authenticated and Review.query.filter_by(
+                    movie_id=int(movie_id_raw), user_id=current_user.id
+                ).first():
+                    flash('You have already reviewed this film.', 'error')
+                    return redirect(url_for('movie_detail', movie_id=int(movie_id_raw)))
                 db.session.add(Review(
                     movie_id=int(movie_id_raw),
                     user_id=current_user.id if current_user.is_authenticated else None,
@@ -282,19 +295,31 @@ def register_routes(app):
             form_data['name'] = current_user.username
 
         recent_watched = []
+        all_reviewed = False
         if not movie_id_param and current_user.is_authenticated:
+            reviewed_ids = {
+                r.movie_id for r in Review.query.filter_by(user_id=current_user.id).all()
+            }
             entries = WatchedMovie.query.filter_by(
                 user_id=current_user.id
-            ).order_by(WatchedMovie.watched_at.desc()).limit(4).all()
+            ).order_by(WatchedMovie.watched_at.desc()).all()
+            total_watched = len(entries)
             for entry in entries:
+                if entry.movie_id in reviewed_ids:
+                    continue
                 cached = db.session.get(MovieCache, entry.movie_id)
                 if not cached:
                     cached = cache_movie(entry.movie_id)
                 if cached:
                     recent_watched.append(cached)
+                if len(recent_watched) == 4:
+                    break
+            if total_watched > 0 and not recent_watched:
+                all_reviewed = True
 
         return render_template('add_review.html', errors=errors, form_data=form_data,
-                               poster_path=poster_path, recent_watched=recent_watched)
+                               poster_path=poster_path, recent_watched=recent_watched,
+                               all_reviewed=all_reviewed)
 
     @app.route('/suggestions')
     def suggestions():
