@@ -732,6 +732,8 @@ a:hover { text-decoration: underline; }
     border-radius: 16px;
     padding: 2rem;
     max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
     width: 100%;
     text-align: center;
     box-shadow: 0 8px 40px rgba(0,0,0,0.18);
